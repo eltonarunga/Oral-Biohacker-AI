@@ -53,16 +53,28 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
             setState(prev => ({ ...prev, isLoading: false }));
         }
     };
+    
+    const handleClearHistory = () => {
+        // Re-initialize the chat session to start fresh
+        const newChat = createSymptomCheckerChat();
+        setState({
+            chat: newChat,
+            history: [],
+            isLoading: false,
+        });
+    };
 
     return (
         <Card title="AI Symptom Checker" icon={<ChatIcon />}>
             <div className="flex flex-col h-96">
                 <div className="flex-grow overflow-y-auto pr-2 space-y-4 mb-4">
-                    <div className="flex justify-start">
-                        <div className="bg-slate-700 rounded-lg p-3 max-w-sm">
-                            <p className="text-sm">Hello! Describe your oral health symptoms (e.g., 'my gums are bleeding when I brush' or 'I have a sharp pain in my back tooth').</p>
+                    {state.history.length === 0 && (
+                        <div className="flex justify-start">
+                            <div className="bg-slate-700 rounded-lg p-3 max-w-sm">
+                                <p className="text-sm">Hello! Describe your oral health symptoms (e.g., 'my gums are bleeding when I brush' or 'I have a sharp pain in my back tooth').</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
                     {state.history.map((msg, index) => (
                         <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`${msg.role === 'user' ? 'bg-blue-600' : 'bg-slate-700'} rounded-lg p-3 max-w-sm`}>
@@ -90,6 +102,17 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                     />
                     <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold p-2 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled={state.isLoading || !input.trim()}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={handleClearHistory}
+                        className="bg-slate-600 hover:bg-slate-700 text-slate-200 font-bold p-2 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={state.isLoading || state.history.length === 0}
+                        aria-label="Clear chat history"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                     </button>
                 </form>
             </div>
