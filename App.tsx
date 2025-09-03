@@ -3,15 +3,11 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import { Sidebar } from './components/Sidebar';
 import { mockProfiles } from './data/mockProfiles';
-import { UserProfile, ProfileData, SymptomCheckerState } from './types';
-import PersonalizedPlanComponent from './components/PersonalizedPlan';
-import SymptomChecker from './components/SymptomChecker';
+import { UserProfile, ProfileData } from './types';
 import EducationalContent from './components/EducationalContent';
-import { generatePersonalizedPlan } from './services/geminiService';
 import Login from './components/Login';
-import FindDentist from './components/FindDentist';
 
-type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist';
+type Page = 'dashboard' | 'education';
 
 const guestProfile: UserProfile = {
   id: 'guest',
@@ -48,12 +44,7 @@ const App: React.FC = () => {
 
   const getActiveProfileData = () => {
     if (!activeProfileId) return {} as ProfileData; // Return empty if no active profile
-    const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false };
     return profilesData[activeProfileId] ?? {
-      plan: null,
-      isPlanLoading: false,
-      planError: null,
-      symptomCheckerState: defaultSymptomState,
       habitStreak: 0,
       lastLoggedDate: null,
     };
@@ -91,19 +82,6 @@ const App: React.FC = () => {
     setProfiles(prevProfiles => prevProfiles.map(p => p.id === updatedProfile.id ? updatedProfile : p));
   };
 
-  const handleGeneratePlan = useCallback(async () => {
-    if (!activeProfile) return;
-    updateActiveProfileData({ isPlanLoading: true, planError: null });
-    try {
-      const generatedPlan = await generatePersonalizedPlan(activeProfile);
-      updateActiveProfileData({ plan: generatedPlan });
-    } catch (err) {
-      updateActiveProfileData({ planError: 'Failed to generate plan. Please check your API key and try again.' });
-      console.error(err);
-    } finally {
-      updateActiveProfileData({ isPlanLoading: false });
-    }
-  }, [activeProfile, activeProfileId]);
 
   const handleLogin = (asGuest: boolean) => {
     if (asGuest) {
@@ -149,25 +127,6 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (page) {
-      case 'plan':
-        return <PersonalizedPlanComponent 
-                  plan={activeProfileData.plan}
-                  isLoading={activeProfileData.isPlanLoading}
-                  onGeneratePlan={handleGeneratePlan}
-                  error={activeProfileData.planError}
-                />;
-      case 'symptom-checker':
-        return <SymptomChecker 
-                  state={activeProfileData.symptomCheckerState} 
-                  setState={(updater) => {
-                    const newState = typeof updater === 'function' 
-                      ? updater(activeProfileData.symptomCheckerState) 
-                      : updater;
-                    updateActiveProfileData({ symptomCheckerState: newState });
-                  }} 
-                />;
-      case 'find-dentist':
-        return <FindDentist />;
       case 'education':
         return <EducationalContent />;
       case 'dashboard':
