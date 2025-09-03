@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [page, setPage] = useState<Page>('dashboard');
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [activeProfileId, setActiveProfileId] = useState<string>('');
 
@@ -131,6 +132,11 @@ const App: React.FC = () => {
     localStorage.removeItem('isGuest');
     // We can leave activeProfileId and profilesData for when the user signs back in
   };
+  
+  const handleNavigate = (page: Page) => {
+    setPage(page);
+    setIsSidebarOpen(false);
+  };
 
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
@@ -183,10 +189,11 @@ const App: React.FC = () => {
         onProfileChange={handleProfileChange}
         isGuest={isGuest}
         onLogout={handleLogout}
+        onMenuClick={() => setIsSidebarOpen(true)}
       />
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8 flex space-x-8">
-        <Sidebar currentPage={page} onNavigate={setPage} />
-        <main className="flex-1">
+      <div className="container mx-auto p-4 sm:p-6 lg:p-8 flex">
+        <Sidebar currentPage={page} onNavigate={handleNavigate} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <main className="flex-1 lg:ml-8">
           {renderPage()}
         </main>
       </div>

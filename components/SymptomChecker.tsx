@@ -66,7 +66,7 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
 
     return (
         <Card title="AI Symptom Checker" icon={<ChatIcon />}>
-            <div className="flex flex-col h-96">
+            <div className="flex flex-col h-[65vh] lg:h-96">
                 <div className="flex-grow overflow-y-auto pr-2 space-y-4 mb-4">
                     {state.history.length === 0 && (
                         <div className="flex justify-start">
