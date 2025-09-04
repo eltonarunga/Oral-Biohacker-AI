@@ -19,7 +19,7 @@ const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolea
     const inactiveClasses = 'text-slate-400 hover:bg-slate-800 hover:text-white';
     return (
         <li>
-            <a href="#" onClick={(e) => { e.preventDefault(); onClick(); }} className={`flex items-center p-3 text-base font-normal rounded-lg transition-all duration-200 ${isActive ? activeClasses : inactiveClasses}`}>
+            <a href="#" onClick={(e) => { e.preventDefault(); onClick(); }} className={`flex items-center p-4 text-base font-normal rounded-lg transition-all duration-200 ${isActive ? activeClasses : inactiveClasses}`}>
                 {icon}
                 <span className="ml-3">{label}</span>
             </a>
@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, isOpe
             <button onClick={onClose} className="absolute top-4 right-4 p-1 text-gray-400 hover:bg-slate-700 rounded-full lg:hidden" aria-label="Close sidebar">
               <XIcon />
             </button>
-            <ul className="space-y-2 pt-12 lg:pt-0">
+            <ul className="space-y-3 pt-12 lg:pt-0">
                 <NavItem icon={<DashboardIcon/>} label="Dashboard" isActive={currentPage === 'dashboard'} onClick={() => onNavigate('dashboard')} />
                 <NavItem icon={<EducationIcon/>} label="Education" isActive={currentPage === 'education'} onClick={() => onNavigate('education')} />
             </ul>
