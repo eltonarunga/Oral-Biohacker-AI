@@ -6,8 +6,9 @@ import { mockProfiles } from './data/mockProfiles';
 import { UserProfile, ProfileData } from './types';
 import EducationalContent from './components/EducationalContent';
 import Login from './components/Login';
+import FindDentist from './components/FindDentist';
 
-type Page = 'dashboard' | 'education';
+type Page = 'dashboard' | 'education' | 'find-dentist';
 
 const guestProfile: UserProfile = {
   id: 'guest',
@@ -127,6 +128,8 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (page) {
+      case 'find-dentist':
+        return <FindDentist />;
       case 'education':
         return <EducationalContent />;
       case 'dashboard':
