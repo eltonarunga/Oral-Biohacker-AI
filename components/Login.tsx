@@ -34,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </button>
                 <button
                     onClick={() => onLogin(true)}
-                    className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 px-6 rounded-lg transition duration-200"
+                    className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
                 >
                     Continue as Guest
                 </button>

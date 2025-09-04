@@ -33,7 +33,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ streak, isLoggedToday, onLo
                 ) : (
                     <button 
                         onClick={onLogHabit} 
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
                     >
                         Log Daily Habit (e.g., Oil Pulling)
                     </button>
