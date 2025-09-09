@@ -49,3 +49,8 @@ export interface GroundingChunk {
         title: string;
     }
 }
+
+export interface SmileDesignResult {
+    image: string | null; // base64 string
+    text: string | null;
+}

@@ -29,7 +29,7 @@ const MenuIcon = () => (
 
 const Header: React.FC<HeaderProps> = ({ profiles, activeProfileId, onProfileChange, isGuest, onLogout, onMenuClick }) => {
   return (
-    <header className="bg-slate-900/70 backdrop-blur-lg sticky top-0 z-20 border-b border-slate-700">
+    <header className="bg-slate-900/70 backdrop-blur-lg sticky top-0 z-20 border-b border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({ profiles, activeProfileId, onProfileCha
             )}
             <button
               onClick={onLogout}
-              className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-4 rounded-lg text-sm transition duration-200 transform hover:scale-105 shadow-lg"
+              className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-4 rounded-lg text-sm transition duration-200"
             >
               Sign Out
             </button>
