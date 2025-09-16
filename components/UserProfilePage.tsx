@@ -1,0 +1,190 @@
+import React, { useState } from 'react';
+import { UserProfile, Page } from '../types';
+import AvatarSelectionModal from './AvatarSelectionModal';
+
+interface UserProfilePageProps {
+  profile: UserProfile;
+  onNavigate: (page: Page) => void;
+  onUpdateProfile: (profile: UserProfile) => void;
+}
+
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onNavigate, onUpdateProfile }) => {
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [darkModeEnabled, setDarkModeEnabled] = useState(true);
+    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+    const handleAvatarSelect = (url: string) => {
+        onUpdateProfile({ ...profile, avatarUrl: url });
+        setIsAvatarModalOpen(false);
+    };
+
+    return (
+        <>
+            <div className="relative flex size-full min-h-screen flex-col justify-between bg-slate-900 text-white">
+                <div className="flex-grow">
+                    {/* Header */}
+                    <div className="flex items-center bg-slate-800 border-b border-slate-700 p-4 pb-3 justify-between sticky top-0 z-10 shadow-sm">
+                        <button onClick={() => onNavigate('dashboard')} className="text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-700 transition-colors">
+                            <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path>
+                            </svg>
+                        </button>
+                        <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">Profile</h2>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="flex w-full flex-col gap-4 items-center">
+                            <div className="flex gap-4 flex-col items-center">
+                                <div className="relative">
+                                    <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover" />
+                                    <button onClick={() => setIsAvatarModalOpen(true)} className="absolute bottom-1 right-1 bg-cyan-500 text-white rounded-full p-1.5 shadow-md hover:bg-cyan-600 transition-colors">
+                                        <span className="material-symbols-outlined text-base"> edit </span>
+                                    </button>
+                                </div>
+                                <div className="flex flex-col items-center justify-center">
+                                    <p className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
+                                    <p className="text-slate-400 text-base font-normal leading-normal text-center">{profile.bio}</p>
+                                    <p className="text-slate-400 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="px-4 space-y-6">
+                        {/* Personal Information */}
+                        <div>
+                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
+                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                                <InfoRow icon="Envelope" label="Email" value={profile.email} />
+                                <InfoRow icon="Phone" label="Phone" value={profile.phone} />
+                                <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
+                                <InfoRow icon="Calendar" label="Date of Birth" value={profile.dateOfBirth} noBorder />
+                            </div>
+                        </div>
+                        {/* Biometric Data */}
+                        <div>
+                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
+                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                                <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
+                                <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
+                                <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
+                            </div>
+                        </div>
+                        {/* App Settings */}
+                        <div>
+                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
+                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                                <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
+                                <ToggleRow icon="dark_mode" label="Dark Mode" enabled={darkModeEnabled} onToggle={setDarkModeEnabled} isMaterialIcon />
+                                <LinkRow icon="ShieldCheck" label="Privacy Settings" />
+                                <LinkRow icon="FileText" label="Terms of Service" />
+                                <LinkRow icon="Question" label="Help & Support" noBorder/>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-24"></div> {/* Spacer for bottom nav */}
+                </div>
+
+                {/* Bottom Navigation */}
+                <div className="sticky bottom-0">
+                    <div className="flex gap-1 border-t border-slate-700 bg-slate-800 px-2 pb-3 pt-2">
+                        <BottomNavItem label="Dashboard" icon={<DashboardIcon />} isActive={false} onClick={() => onNavigate('dashboard')} />
+                        <BottomNavItem label="Plan" icon={<PlanIcon />} isActive={false} onClick={() => onNavigate('plan')} />
+                        <BottomNavItem label="Checker" icon={<ChatIcon />} isActive={false} onClick={() => onNavigate('symptom-checker')} />
+                        <BottomNavItem label="Smile" icon={<SmileIcon />} isActive={false} onClick={() => onNavigate('smile-design-studio')} />
+                        <BottomNavItem label="Dentist" icon={<DentistIcon />} isActive={false} onClick={() => onNavigate('find-dentist')} />
+                        <BottomNavItem label="Learn" icon={<EducationIcon />} isActive={false} onClick={() => onNavigate('education')} />
+                        <BottomNavItem label="Profile" icon={<UserIcon isFill />} isActive={true} onClick={() => onNavigate('profile')} />
+                    </div>
+                </div>
+            </div>
+            <AvatarSelectionModal
+                isOpen={isAvatarModalOpen}
+                onClose={() => setIsAvatarModalOpen(false)}
+                onSelectAvatar={handleAvatarSelect}
+            />
+        </>
+    );
+};
+
+// --- Sub-components for UserProfilePage ---
+
+const ICONS: { [key: string]: React.ReactNode } = {
+    Envelope: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z"></path></svg>,
+    Phone: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M222.37,158.46l-47.11-21.11-.13-.06a16,16,0,0,0-15.17,1.4,8.12,8.12,0,0,0-.75.56L134.87,160c-15.42-7.49-31.34-23.29-38.83-38.51l20.78-24.71c.2-.25.39-.5.57-.77a16,16,0,0,0,1.32-15.06l0-.12L97.54,33.64a16,16,0,0,0-16.62-9.52A56.26,56.26,0,0,0,32,80c0,79.4,64.6,144,144,144a56.26,56.26,0,0,0,55.88-48.92A16,16,0,0,0,222.37,158.46ZM176,208A128.14,128.14,0,0,1,48,80,40.2,40.2,0,0,1,82.87,40a.61.61,0,0,0,0,.12l21,47L83.2,111.86a6.13,6.13,0,0,0-.57.77,16,16,0,0,0-1,15.7c9.06,18.53,27.73,37.06,46.46,46.11a16,16,0,0,0,15.75-1.14,8.44,8.44,0,0,0,.74-.56L168.89,152l47,21.05h0s.08,0,.11,0A40.21,40.21,0,0,1,176,208Z"></path></svg>,
+    GenderFemale: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M208,96a80,80,0,1,0-88,79.6V200H88a8,8,0,0,0,0,16h32v24a8,8,0,0,0,16,0V216h32a8,8,0,0,0,0-16H136V175.6A80.11,80.11,0,0,0,208,96ZM64,96a64,64,0,1,1,64,64A64.07,64.07,0,0,1,64,96Z"></path></svg>,
+    Calendar: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Zm-96-88v64a8,8,0,0,1-16,0V132.94l-4.42,2.22a8,8,0,0,1-7.16-14.32l16-8A8,8,0,0,1,112,120Zm59.16,30.45L152,176h16a8,8,0,0,1,0,16H136a8,8,0,0,1-6.4-12.8l28.78-38.37A8,8,0,1,0,145.07,132a8,8,0,1,1-13.85-8A24,24,0,0,1,176,136,23.76,23.76,0,0,1,171.16,150.45Z"></path></svg>,
+    Ruler: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M235.32,73.37,182.63,20.69a16,16,0,0,0-22.63,0L20.68,160a16,16,0,0,0,0,22.63l52.69,52.68a16,16,0,0,0,22.63,0L235.32,96A16,16,0,0,0,235.32,73.37ZM84.68,224,32,171.31l32-32,26.34,26.35a8,8,0,0,0,11.32-11.32L75.31,128,96,107.31l26.34,26.35a8,8,0,0,0,11.32-11.32L107.31,96,128,75.31l26.34,26.35a8,8,0,0,0,11.32-11.32L139.31,64l32-32L224,84.69Z"></path></svg>,
+    Barbell: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M248,120h-8V88a16,16,0,0,0-16-16H208V64a16,16,0,0,0-16-16H168a16,16,0,0,0-16,16v56H104V64A16,16,0,0,0,88,48H64A16,16,0,0,0,48,64v8H32A16,16,0,0,0,16,88v32H8a8,8,0,0,0,0,16h8v32a16,16,0,0,0,16,16H48v8a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V136h48v56a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16v-8h16a16,16,0,0,0,16-16V136h8a8,8,0,0,0,0-16ZM32,168V88H48v80Zm56,24H64V64H88V192Zm104,0H168V64h24V175.82c0,.06,0,.12,0,.18s0,.12,0,.18V192Zm32-24H208V88h16Z"></path></svg>,
+    Drop: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M174,47.75a254.19,254.19,0,0,0-41.45-38.3,8,8,0,0,0-9.18,0A254.19,254.19,0,0,0,82,47.75C54.51,79.32,40,112.6,40,144a88,88,0,0,0,176,0C216,112.6,201.49,79.32,174,47.75ZM128,216a72.08,72.08,0,0,1-72-72c0-57.23,55.47-105,72-118,16.53,13,72,60.75,72,118A72.08,72.08,0,0,1,128,216Zm55.89-62.66a57.6,57.6,0,0,1-46.56,46.55A8.75,8.75,0,0,1,136,200a8,8,0,0,1-1.32-15.89c16.57-2.79,30.63-16.85,33.44-33.45a8,8,0,0,1,15.78,2.68Z"></path></svg>,
+    Bell: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"></path></svg>,
+    ShieldCheck: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M208,40H48A16,16,0,0,0,32,56v58.78c0,89.61,75.82,119.34,91,124.39a15.53,15.53,0,0,0,10,0c15.2-5.05,91-34.78,91-124.39V56A16,16,0,0,0,208,40Zm0,74.79c0,78.42-66.35,104.62-80,109.18-13.53-4.51-80-30.69-80-109.18V56H208ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.68l50.34-50.34a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z"></path></svg>,
+    FileText: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"></path></svg>,
+    Question: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path></svg>,
+};
+const InfoRow = ({ icon, label, value, noBorder = false }: { icon: string, label: string, value: string, noBorder?: boolean }) => (
+    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-slate-700'}`}>
+        <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-12">{ICONS[icon]}</div>
+        <div className="flex flex-col justify-center">
+            <p className="text-base font-medium leading-normal line-clamp-1">{label}</p>
+            <p className="text-slate-400 text-sm font-normal leading-normal line-clamp-2">{value}</p>
+        </div>
+    </div>
+);
+const ToggleRow = ({ icon, label, enabled, onToggle, isMaterialIcon = false }: { icon: string, label: string, enabled: boolean, onToggle: (e:boolean) => void, isMaterialIcon?: boolean }) => (
+    <div className="flex items-center gap-4 px-4 py-3 border-b border-slate-700 justify-between">
+        <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-10">
+                {isMaterialIcon ? <span className="material-symbols-outlined">{icon}</span> : ICONS[icon]}
+            </div>
+            <p className="text-base font-normal leading-normal flex-1 truncate">{label}</p>
+        </div>
+        <div className="shrink-0">
+            <label className={`relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-600 p-0.5 transition-colors ${enabled && 'bg-cyan-500 justify-end'}`}>
+                <div className="h-full w-[27px] rounded-full bg-white transition-transform" style={{ boxShadow: 'rgba(0, 0, 0, 0.15) 0px 3px 8px, rgba(0, 0, 0, 0.06) 0px 3px 1px' }}></div>
+                <input checked={enabled} onChange={e => onToggle(e.target.checked)} className="invisible absolute" type="checkbox" />
+            </label>
+        </div>
+    </div>
+);
+const LinkRow = ({ icon, label, noBorder=false }: { icon: string, label: string, noBorder?: boolean }) => (
+     <a className={`flex items-center gap-4 px-4 py-3 justify-between hover:bg-slate-700 transition-colors ${!noBorder && 'border-b border-slate-700'}`} href="#">
+        <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-10">{ICONS[icon]}</div>
+            <p className="text-base font-normal leading-normal flex-1 truncate">{label}</p>
+        </div>
+        <div className="shrink-0">
+             <div className="flex size-7 items-center justify-center">
+                <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"></path></svg>
+            </div>
+        </div>
+    </a>
+);
+
+// --- Bottom Nav Icons ---
+const SmileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const DentistIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 12l-3.5-4.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 12l3.5-4.5" /></svg>;
+const EducationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>;
+const DashboardIcon = () => <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M218.83,103.77l-80-75.48a1.14,1.14,0,0,1-.11-.11,16,16,0,0,0-21.53,0l-.11.11,L37.17,103.77A16,16,0,0,0,32,115.55V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V160h32v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V115.55A16,16,0,0,0,218.83,103.77ZM208,208H160V160a16,16,0,0,0-16-16H112a16,16,0,0,0-16,16v48H48V115.55l.11-.1L128,40l79.9,75.43.11.1Z"></path></svg>;
+const PlanIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>;
+const ChatIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
+const UserIcon = ({ isFill = false }: { isFill?: boolean }) => isFill ? 
+    <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M230.93,220a8,8,0,0,1-6.93,4H32a8,8,0,0,1-6.92-12c15.23-26.33,38.7-45.21,66.09-54.16a72,72,0,1,1,73.66,0c27.39,8.95,50.86,27.83,66.09,54.16A8,8,0,0,1,230.93,220Z"></path></svg>
+    : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
+
+const BottomNavItem = ({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) => {
+    const activeClasses = 'text-cyan-400 bg-cyan-900/60';
+    const inactiveClasses = 'text-slate-400 hover:bg-slate-700';
+    const textActiveClass = 'text-cyan-400 font-bold';
+    const textInactiveClass = '';
+
+    return (
+        <a onClick={onClick} className={`flex flex-1 flex-col items-center justify-end gap-1 py-1 rounded-md transition-colors cursor-pointer ${isActive ? activeClasses : inactiveClasses}`}>
+            <div className="flex h-8 items-center justify-center">{icon}</div>
+            <p className={`text-xs leading-normal tracking-[0.015em] ${isActive ? textActiveClass : textInactiveClass}`}>{label}</p>
+        </a>
+    );
+};
+
+
+export default UserProfilePage;

@@ -1,5 +1,7 @@
 import { type Chat } from "@google/genai";
 
+export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -8,6 +10,17 @@ export interface UserProfile {
   bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';
   lifestyle: string;
   goals: string;
+  // New fields for profile page
+  avatarUrl: string;
+  bio: string;
+  joinDate: string;
+  email: string;
+  phone: string;
+  gender: 'Female' | 'Male' | 'Other';
+  dateOfBirth: string;
+  height: number; // cm
+  weight: number; // kg
+  bloodType: string;
 }
 
 export interface PersonalizedPlan {
@@ -35,6 +48,7 @@ export interface ProfileData {
     symptomCheckerState: SymptomCheckerState;
     habitStreak: number;
     lastLoggedDate: string | null;
+    habits: Habit[];
 }
 
 export interface Dentist {
@@ -53,4 +67,12 @@ export interface GroundingChunk {
 export interface SmileDesignResult {
     image: string | null; // base64 string
     text: string | null;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  time: 'Morning' | 'Evening';
+  completed: boolean;
+  icon: string; // Material Symbols icon name
 }
