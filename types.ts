@@ -1,3 +1,4 @@
+
 import { type Chat } from "@google/genai";
 
 export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile';
@@ -21,6 +22,11 @@ export interface UserProfile {
   height: number; // cm
   weight: number; // kg
   bloodType: string;
+  // New health fields
+  dietaryRestrictions: string;
+  allergies: string;
+  medications: string;
+  doctorName: string;
 }
 
 export interface PersonalizedPlan {

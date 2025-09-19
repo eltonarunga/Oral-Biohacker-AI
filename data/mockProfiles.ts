@@ -1,3 +1,4 @@
+
 import { UserProfile } from '../types';
 
 export const mockProfiles: UserProfile[] = [
@@ -19,6 +20,10 @@ export const mockProfiles: UserProfile[] = [
     height: 180,
     weight: 78,
     bloodType: 'O+',
+    dietaryRestrictions: 'None',
+    allergies: 'Pollen',
+    medications: 'None',
+    doctorName: 'Dr. Evelyn Reed',
   },
   {
     id: 'user-2',
@@ -38,6 +43,10 @@ export const mockProfiles: UserProfile[] = [
     height: 165,
     weight: 62,
     bloodType: 'A-',
+    dietaryRestrictions: 'Vegetarian',
+    allergies: 'Penicillin',
+    medications: 'Iron supplement',
+    doctorName: 'Dr. Marcus Thorne',
   },
   {
     id: 'user-3',
@@ -57,5 +66,9 @@ export const mockProfiles: UserProfile[] = [
     height: 175,
     weight: 75,
     bloodType: 'B+',
+    dietaryRestrictions: 'High-protein',
+    allergies: 'None',
+    medications: 'Multivitamin',
+    doctorName: 'Dr. Anya Sharma',
   }
 ];

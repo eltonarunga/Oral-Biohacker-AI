@@ -31,6 +31,10 @@ const guestProfile: UserProfile = {
   height: 0,
   weight: 0,
   bloodType: 'N/A',
+  dietaryRestrictions: 'N/A',
+  allergies: 'N/A',
+  medications: 'N/A',
+  doctorName: 'N/A',
 };
 
 const initialHabitsData: Habit[] = [

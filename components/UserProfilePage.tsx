@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserProfile, Page } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
@@ -70,6 +71,16 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onNavigate, 
                                 <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
                             </div>
                         </div>
+                        {/* Health Details */}
+                        <div>
+                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
+                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                                <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
+                                <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
+                                <InfoRow icon="Pill" label="Medications" value={profile.medications} />
+                                <InfoRow icon="Stethoscope" label="Doctor's Name" value={profile.doctorName} noBorder />
+                            </div>
+                        </div>
                         {/* App Settings */}
                         <div>
                             <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
@@ -121,6 +132,10 @@ const ICONS: { [key: string]: React.ReactNode } = {
     ShieldCheck: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M208,40H48A16,16,0,0,0,32,56v58.78c0,89.61,75.82,119.34,91,124.39a15.53,15.53,0,0,0,10,0c15.2-5.05,91-34.78,91-124.39V56A16,16,0,0,0,208,40Zm0,74.79c0,78.42-66.35,104.62-80,109.18-13.53-4.51-80-30.69-80-109.18V56H208ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.68l50.34-50.34a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z"></path></svg>,
     FileText: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"></path></svg>,
     Question: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path></svg>,
+    Leaf: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M219,139.75,172.23,195a16,16,0,0,1-22.45,0L103,142.23a16,16,0,0,1,0-22.45l46.72-52.75A16,16,0,0,1,161,61.16l49.25,27.09a32,32,0,0,1-13,58.82ZM155,75.92l-42.2,47.7,42.19,42.2,42.2-47.7ZM152.23,211L37,98.23a16,16,0,0,1,0-22.45L96.25,16.52a16,16,0,0,1,22.45,0L216.48,124.3a8,8,0,0,1-11.31,11.31L107,35.92,53,89.77l102.25,97.7,11.3-11.3a8,8,0,0,1,11.31,11.31Z"></path></svg>,
+    Prohibit: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm56-88a56,56,0,0,1-98.69-34.83,8,8,0,1,1,15.86,2.34A40,40,0,1,0,168,128a8,8,0,0,1-16,0,24,24,0,1,1-24-24,8,8,0,0,1,0-16,40,40,0,1,0-40,40,8,8,0,0,1-16,0,56,56,0,0,1,112,0Z"></path></svg>,
+    Pill: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M190.54,65.46a92,92,0,0,0-129.7,0,91.31,91.31,0,0,0-19.6,28.69,92,92,0,0,0,129.7,129.7,91.31,91.31,0,0,0,19.6-28.69,92,92,0,0,0,0-129.7Zm-11.32,118.38a76,76,0,0,1-107.48-107.48,75.31,75.31,0,0,1,16.22-23.77L178.74,153.38A75.31,75.31,0,0,1,179.22,183.84ZM91.26,76.62l96.79,96.79a75.31,75.31,0,0,1-16.22,23.77A76,76,0,0,1,64.34,89.69,75.31,75.31,0,0,1,91.26,76.62ZM128,120a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h24A8,8,0,0,1,128,120Zm48,0a8,8,0,0,1-8,8H144a8,8,0,0,1,0-16h24A8,8,0,0,1,176,120Z"></path></svg>,
+    Stethoscope: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M224,96a8,8,0,0,1-8,8H200V216a8,8,0,0,1-16,0V104H72v56a24,24,0,0,0,48,0,8,8,0,0,1,16,0,40,40,0,0,1-80,0V104H40a8,8,0,0,1-8-8V64a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8ZM56,88V72H200V88Zm80-48a24,24,0,1,0-24,24A24,24,0,0,0,136,40Z"></path></svg>,
 };
 const InfoRow = ({ icon, label, value, noBorder = false }: { icon: string, label: string, value: string, noBorder?: boolean }) => (
     <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-slate-700'}`}>
