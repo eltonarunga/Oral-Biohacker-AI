@@ -1,7 +1,6 @@
-Oral Biohacker AI 🦷✨
+# Oral Biohacker AI 🦷✨
 
 Oral Biohacker AI is a comprehensive web application designed to empower users to take control of their oral health through personalized, AI-driven insights and tools. This application helps you understand your oral health better, build healthy habits, and connect with dental professionals.
-This contains everything you need to run your app locally.
 
 ## 🌟 Features
 
@@ -13,52 +12,31 @@ This contains everything you need to run your app locally.
 - **Educational Content:** Learn more about oral health and biohacking with our curated educational resources.
 - **User Profile Management:** Keep your personal information, health data, and goals all in one place.
 
-
 ## 🚀 Getting Started
 
-
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+This project is a static web application that can be run by serving the files from any simple HTTP server.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later recommended)
-- [npm](https://www.npmjs.com/)
+- A modern web browser that supports ES modules and import maps.
+- A local web server. You can use Python's built-in server, for example: `python -m http.server`
 
-### Installation
+### Running the App
 
-1.  **Clone the repository:**
-    ```sh
-    git clone https://github.com/your-username/oral-biohacker-ai.git
-    cd oral-biohacker-ai
-    ```
+1.  **Clone or download the project files.**
 
-2.  **Install dependencies:**
-    ```sh
-    npm install
-    ```
+2.  **Start a local web server** in the project's root directory.
 
-3.  **Set up your environment variables:**
+3.  **API Key:** The application requires a Google Gemini API key. This key is expected to be available as an environment variable named `API_KEY`. The execution environment must provide this variable. You can get your API key from the [Google AI Studio](https://aistudio.google.com/app/apikey).
 
-    Create a file named `.env` in the root of the project and add your Google Gemini API key:
-
-    ```env
-    GEMINI_API_KEY=your_gemini_api_key
-    ```
-
-    You can get your API key from the [Google AI Studio](https://aistudio.google.com/app/apikey).
-
-4.  **Run the development server:**
-    ```sh
-    npm run dev
-    ```
-
-    The application should now be running at `http://localhost:5173`.
+4.  **Open the application** in your browser (e.g., `http://localhost:8000`).
 
 ## 🛠️ Technology Stack
 
-- **Frontend:** [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [Vite](https://vitejs.dev/)
+- **Frontend:** [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/)
 - **AI:** [Google Gemini](https://deepmind.google/technologies/gemini/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) (implicitly used via class names)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN)
+- **Module Loading:** ES Modules with [Import Maps](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap)
 
 ## 📸 Screenshots
 
