@@ -1,5 +1,4 @@
 Oral Biohacker AI 🦷✨
-# Run and deploy your AI Studio app
 
 Oral Biohacker AI is a comprehensive web application designed to empower users to take control of their oral health through personalized, AI-driven insights and tools. This application helps you understand your oral health better, build healthy habits, and connect with dental professionals.
 This contains everything you need to run your app locally.
