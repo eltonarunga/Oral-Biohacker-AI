@@ -1,7 +1,6 @@
-
 import { type Chat } from "@google/genai";
 
-export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile';
+export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile' | 'habit-history';
 
 export interface UserProfile {
   id: string;
@@ -52,9 +51,8 @@ export interface ProfileData {
     isPlanLoading: boolean;
     planError: string | null;
     symptomCheckerState: SymptomCheckerState;
-    habitStreak: number;
-    lastLoggedDate: string | null;
     habits: Habit[];
+    habitHistory: Record<string, string[]>; // key is 'YYYY-MM-DD', value is array of completed habit IDs
 }
 
 export interface Dentist {
@@ -79,6 +77,6 @@ export interface Habit {
   id: string;
   name: string;
   time: 'Morning' | 'Evening';
-  completed: boolean;
   icon: string; // Material Symbols icon name
+  category: 'Clinically Proven' | 'Biohacking';
 }

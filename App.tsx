@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -12,6 +11,7 @@ import Login from './components/Login';
 import FindDentist from './components/FindDentist';
 import SmileDesignStudio from './components/SmileDesignStudio';
 import UserProfilePage from './components/UserProfilePage';
+import HabitHistory from './components/HabitHistory';
 
 const guestProfile: UserProfile = {
   id: 'guest',
@@ -38,16 +38,19 @@ const guestProfile: UserProfile = {
 };
 
 const initialHabitsData: Habit[] = [
-  { id: 'h1', name: 'Oil Pulling', time: 'Morning', completed: true, icon: 'wb_sunny' },
-  { id: 'h2', name: 'Tongue Scraping', time: 'Morning', completed: true, icon: 'wb_sunny' },
-  { id: 'h3', name: 'Probiotic Rinse', time: 'Morning', completed: true, icon: 'wb_sunny' },
-  { id: 'h4', name: 'Vitamin D3/K2', time: 'Morning', completed: false, icon: 'wb_sunny' },
-  { id: 'h5', name: 'Mouthwash', time: 'Evening', completed: true, icon: 'dark_mode' },
-  { id: 'h6', name: 'Flossing', time: 'Evening', completed: true, icon: 'dark_mode' },
-  { id: 'h7', name: 'Brushing', time: 'Evening', completed: false, icon: 'dark_mode' },
-  { id: 'h8', name: 'Oral Probiotic', time: 'Evening', completed: true, icon: 'dark_mode' },
-  { id: 'h9', name: 'Magnesium', time: 'Evening', completed: false, icon: 'dark_mode' },
-  { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', completed: false, icon: 'dark_mode' },
+  // Clinically Proven
+  { id: 'h6', name: 'Flossing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  { id: 'h7', name: 'Brushing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  { id: 'h5', name: 'Mouthwash', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  
+  // Biohacking
+  { id: 'h1', name: 'Oil Pulling', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h2', name: 'Tongue Scraping', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h3', name: 'Probiotic Rinse', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h4', name: 'Vitamin D3/K2', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h8', name: 'Oral Probiotic', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+  { id: 'h9', name: 'Magnesium', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+  { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
 ];
 
 const BottomNavItem: React.FC<{label: string, icon: string, isActive: boolean, onClick: () => void}> = ({ label, icon, isActive, onClick }) => {
@@ -101,8 +104,6 @@ const App: React.FC = () => {
   const getActiveProfileData = (): ProfileData => {
     if (!activeProfileId) return {} as ProfileData;
     const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false };
-    // FIX: Explicitly type `data` to inform TypeScript that its properties might be undefined,
-    // which aligns with the use of nullish coalescing operators below.
     const data: Partial<ProfileData> = profilesData[activeProfileId] ?? {};
 
     return {
@@ -110,9 +111,8 @@ const App: React.FC = () => {
       isPlanLoading: data.isPlanLoading ?? false,
       planError: data.planError ?? null,
       symptomCheckerState: data.symptomCheckerState ?? defaultSymptomState,
-      habitStreak: data.habitStreak ?? 0,
-      lastLoggedDate: data.lastLoggedDate ?? null,
-      habits: data.habits ?? initialHabitsData.map(h => ({...h, completed: false})),
+      habits: data.habits ?? initialHabitsData,
+      habitHistory: data.habitHistory ?? {},
     };
   };
 
@@ -149,44 +149,33 @@ const App: React.FC = () => {
     } finally {
       updateActiveProfileData({ isPlanLoading: false });
     }
-  }, [activeProfile, activeProfileId]);
+  }, [activeProfile]);
 
   const handleToggleHabit = (habitId: string) => {
     if (!activeProfileId) return;
 
     const currentData = getActiveProfileData();
-    const { habits, habitStreak, lastLoggedDate } = currentData;
-    
-    let toggledHabitCompleted = false;
-    const newHabits = habits.map(h => {
-        if (h.id === habitId) {
-            toggledHabitCompleted = !h.completed;
-            return { ...h, completed: !h.completed };
-        }
-        return h;
-    });
+    const today = new Date().toISOString().split('T')[0];
+    const newHistory = { ...currentData.habitHistory };
+    const todaysCompletions = newHistory[today] ? [...newHistory[today]] : [];
+    const habitIndex = todaysCompletions.indexOf(habitId);
 
-    if (toggledHabitCompleted) {
-        const today = new Date().toISOString().split('T')[0];
-
-        if (today !== lastLoggedDate) {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().split('T')[0];
-            
-            const newStreak = lastLoggedDate === yesterdayStr ? (habitStreak || 0) + 1 : 1;
-
-            updateActiveProfileData({
-                habits: newHabits,
-                habitStreak: newStreak,
-                lastLoggedDate: today,
-            });
-        } else {
-            updateActiveProfileData({ habits: newHabits });
-        }
+    if (habitIndex > -1) {
+        // If habit exists, remove it (uncheck)
+        todaysCompletions.splice(habitIndex, 1);
     } else {
-        updateActiveProfileData({ habits: newHabits });
+        // If habit doesn't exist, add it (check)
+        todaysCompletions.push(habitId);
     }
+
+    if (todaysCompletions.length > 0) {
+        newHistory[today] = todaysCompletions;
+    } else {
+        // Clean up empty entries in history for the day
+        delete newHistory[today];
+    }
+
+    updateActiveProfileData({ habitHistory: newHistory });
   };
 
 
@@ -234,23 +223,6 @@ const App: React.FC = () => {
   if (!activeProfile) {
     return null; 
   }
-  
-  if (page === 'profile') {
-    return <UserProfilePage profile={activeProfile} onNavigate={handleNavigate} onUpdateProfile={handleUpdateProfile} />;
-  }
-
-  if (page === 'symptom-checker') {
-    return <SymptomChecker 
-              state={activeProfileData.symptomCheckerState} 
-              setState={(updater) => {
-                const newState = typeof updater === 'function' 
-                  ? updater(activeProfileData.symptomCheckerState) 
-                  : updater;
-                updateActiveProfileData({ symptomCheckerState: newState });
-              }} 
-              onNavigate={handleNavigate}
-            />;
-  }
 
   const renderPage = () => {
     switch (page) {
@@ -267,13 +239,30 @@ const App: React.FC = () => {
         return <div className="p-4"><FindDentist /></div>;
       case 'education':
         return <div className="p-4"><EducationalContent /></div>;
+      case 'profile':
+        return <UserProfilePage profile={activeProfile} onUpdateProfile={handleUpdateProfile} />;
+      case 'habit-history':
+        return <HabitHistory
+                  habits={activeProfileData.habits}
+                  habitHistory={activeProfileData.habitHistory}
+               />;
+      case 'symptom-checker':
+        return <SymptomChecker 
+                  state={activeProfileData.symptomCheckerState} 
+                  setState={(updater) => {
+                    const newState = typeof updater === 'function' 
+                      ? updater(activeProfileData.symptomCheckerState) 
+                      : updater;
+                    updateActiveProfileData({ symptomCheckerState: newState });
+                  }}
+                />;
       case 'dashboard':
       default:
         return <Dashboard 
                   profile={activeProfile} 
                   onNavigate={handleNavigate} 
                   habits={activeProfileData.habits}
-                  habitStreak={activeProfileData.habitStreak}
+                  habitHistory={activeProfileData.habitHistory}
                   onToggleHabit={handleToggleHabit}
                 />;
     }

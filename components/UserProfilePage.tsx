@@ -1,17 +1,16 @@
 
 import React, { useState } from 'react';
-import { UserProfile, Page } from '../types';
+import { UserProfile } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
 
 interface UserProfilePageProps {
   profile: UserProfile;
-  onNavigate: (page: Page) => void;
   onUpdateProfile: (profile: UserProfile) => void;
 }
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onNavigate, onUpdateProfile }) => {
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile }) => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [darkModeEnabled, setDarkModeEnabled] = useState(true);
+    const [darkModeEnabled, setDarkModeEnabled] = useState(false); // Default to light mode
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
     const handleAvatarSelect = (url: string) => {
@@ -21,94 +20,66 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onNavigate, 
 
     return (
         <>
-            <div className="relative flex size-full min-h-screen flex-col justify-between bg-slate-900 text-white">
-                <div className="flex-grow">
-                    {/* Header */}
-                    <div className="flex items-center bg-slate-800 border-b border-slate-700 p-4 pb-3 justify-between sticky top-0 z-10 shadow-sm">
-                        <button onClick={() => onNavigate('dashboard')} className="text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-700 transition-colors">
-                            <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path>
-                            </svg>
-                        </button>
-                        <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">Profile</h2>
-                    </div>
-
-                    <div className="p-4">
-                        <div className="flex w-full flex-col gap-4 items-center">
-                            <div className="flex gap-4 flex-col items-center">
-                                <div className="relative">
-                                    <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover" />
-                                    <button onClick={() => setIsAvatarModalOpen(true)} className="absolute bottom-1 right-1 bg-cyan-500 text-white rounded-full p-1.5 shadow-md hover:bg-cyan-600 transition-colors">
-                                        <span className="material-symbols-outlined text-base"> edit </span>
-                                    </button>
-                                </div>
-                                <div className="flex flex-col items-center justify-center">
-                                    <p className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
-                                    <p className="text-slate-400 text-base font-normal leading-normal text-center">{profile.bio}</p>
-                                    <p className="text-slate-400 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
-                                </div>
-                            </div>
+            <div className="p-4 space-y-6">
+                {/* Profile Header */}
+                <div className="flex w-full flex-col gap-4 items-center">
+                    <div className="flex gap-4 flex-col items-center">
+                        <div className="relative">
+                            <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover" />
+                            <button onClick={() => setIsAvatarModalOpen(true)} className="absolute bottom-1 right-1 bg-blue-600 text-white rounded-full p-1.5 shadow-md hover:bg-blue-700 transition-colors">
+                                <span className="material-symbols-outlined text-base"> edit </span>
+                            </button>
+                        </div>
+                        <div className="flex flex-col items-center justify-center">
+                            <p className="text-gray-900 text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
+                            <p className="text-gray-500 text-base font-normal leading-normal text-center">{profile.bio}</p>
+                            <p className="text-gray-500 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
                         </div>
                     </div>
-
-                    <div className="px-4 space-y-6">
-                        {/* Personal Information */}
-                        <div>
-                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
-                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                                <InfoRow icon="Envelope" label="Email" value={profile.email} />
-                                <InfoRow icon="Phone" label="Phone" value={profile.phone} />
-                                <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
-                                <InfoRow icon="Calendar" label="Date of Birth" value={profile.dateOfBirth} noBorder />
-                            </div>
-                        </div>
-                        {/* Biometric Data */}
-                        <div>
-                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
-                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                                <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
-                                <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
-                                <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
-                            </div>
-                        </div>
-                        {/* Health Details */}
-                        <div>
-                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
-                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                                <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
-                                <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
-                                <InfoRow icon="Pill" label="Medications" value={profile.medications} />
-                                <InfoRow icon="Stethoscope" label="Doctor's Name" value={profile.doctorName} noBorder />
-                            </div>
-                        </div>
-                        {/* App Settings */}
-                        <div>
-                            <h3 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
-                            <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-                                <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
-                                <ToggleRow icon="dark_mode" label="Dark Mode" enabled={darkModeEnabled} onToggle={setDarkModeEnabled} isMaterialIcon />
-                                <LinkRow icon="ShieldCheck" label="Privacy Settings" />
-                                <LinkRow icon="FileText" label="Terms of Service" />
-                                <LinkRow icon="Question" label="Help & Support" noBorder/>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="h-24"></div> {/* Spacer for bottom nav */}
                 </div>
 
-                {/* Bottom Navigation */}
-                <div className="sticky bottom-0">
-                    <div className="flex gap-1 border-t border-slate-700 bg-slate-800 px-2 pb-3 pt-2">
-                        <BottomNavItem label="Dashboard" icon={<DashboardIcon />} isActive={false} onClick={() => onNavigate('dashboard')} />
-                        <BottomNavItem label="Plan" icon={<PlanIcon />} isActive={false} onClick={() => onNavigate('plan')} />
-                        <BottomNavItem label="Checker" icon={<ChatIcon />} isActive={false} onClick={() => onNavigate('symptom-checker')} />
-                        <BottomNavItem label="Smile" icon={<SmileIcon />} isActive={false} onClick={() => onNavigate('smile-design-studio')} />
-                        <BottomNavItem label="Dentist" icon={<DentistIcon />} isActive={false} onClick={() => onNavigate('find-dentist')} />
-                        <BottomNavItem label="Learn" icon={<EducationIcon />} isActive={false} onClick={() => onNavigate('education')} />
-                        <BottomNavItem label="Profile" icon={<UserIcon isFill />} isActive={true} onClick={() => onNavigate('profile')} />
+                {/* Personal Information */}
+                <div>
+                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                        <InfoRow icon="Envelope" label="Email" value={profile.email} />
+                        <InfoRow icon="Phone" label="Phone" value={profile.phone} />
+                        <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
+                        <InfoRow icon="Calendar" label="Date of Birth" value={profile.dateOfBirth} noBorder />
+                    </div>
+                </div>
+                {/* Biometric Data */}
+                <div>
+                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                        <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
+                        <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
+                        <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
+                    </div>
+                </div>
+                {/* Health Details */}
+                <div>
+                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                        <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
+                        <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
+                        <InfoRow icon="Pill" label="Medications" value={profile.medications} />
+                        <InfoRow icon="Stethoscope" label="Doctor's Name" value={profile.doctorName} noBorder />
+                    </div>
+                </div>
+                {/* App Settings */}
+                <div>
+                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                        <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
+                        <ToggleRow icon="dark_mode" label="Dark Mode" enabled={darkModeEnabled} onToggle={setDarkModeEnabled} isMaterialIcon />
+                        <LinkRow icon="ShieldCheck" label="Privacy Settings" />
+                        <LinkRow icon="FileText" label="Terms of Service" />
+                        <LinkRow icon="Question" label="Help & Support" noBorder/>
                     </div>
                 </div>
             </div>
+            
             <AvatarSelectionModal
                 isOpen={isAvatarModalOpen}
                 onClose={() => setIsAvatarModalOpen(false)}
@@ -137,25 +108,26 @@ const ICONS: { [key: string]: React.ReactNode } = {
     Pill: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M190.54,65.46a92,92,0,0,0-129.7,0,91.31,91.31,0,0,0-19.6,28.69,92,92,0,0,0,129.7,129.7,91.31,91.31,0,0,0,19.6-28.69,92,92,0,0,0,0-129.7Zm-11.32,118.38a76,76,0,0,1-107.48-107.48,75.31,75.31,0,0,1,16.22-23.77L178.74,153.38A75.31,75.31,0,0,1,179.22,183.84ZM91.26,76.62l96.79,96.79a75.31,75.31,0,0,1-16.22,23.77A76,76,0,0,1,64.34,89.69,75.31,75.31,0,0,1,91.26,76.62ZM128,120a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h24A8,8,0,0,1,128,120Zm48,0a8,8,0,0,1-8,8H144a8,8,0,0,1,0-16h24A8,8,0,0,1,176,120Z"></path></svg>,
     Stethoscope: <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M224,96a8,8,0,0,1-8,8H200V216a8,8,0,0,1-16,0V104H72v56a24,24,0,0,0,48,0,8,8,0,0,1,16,0,40,40,0,0,1-80,0V104H40a8,8,0,0,1-8-8V64a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8ZM56,88V72H200V88Zm80-48a24,24,0,1,0-24,24A24,24,0,0,0,136,40Z"></path></svg>,
 };
+
 const InfoRow = ({ icon, label, value, noBorder = false }: { icon: string, label: string, value: string, noBorder?: boolean }) => (
-    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-slate-700'}`}>
-        <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-12">{ICONS[icon]}</div>
+    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-gray-200'}`}>
+        <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-12">{ICONS[icon]}</div>
         <div className="flex flex-col justify-center">
-            <p className="text-base font-medium leading-normal line-clamp-1">{label}</p>
-            <p className="text-slate-400 text-sm font-normal leading-normal line-clamp-2">{value}</p>
+            <p className="text-gray-900 text-base font-medium leading-normal line-clamp-1">{label}</p>
+            <p className="text-gray-500 text-sm font-normal leading-normal line-clamp-2">{value}</p>
         </div>
     </div>
 );
 const ToggleRow = ({ icon, label, enabled, onToggle, isMaterialIcon = false }: { icon: string, label: string, enabled: boolean, onToggle: (e:boolean) => void, isMaterialIcon?: boolean }) => (
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-slate-700 justify-between">
+    <div className={`flex items-center gap-4 px-4 py-3 justify-between ${!isMaterialIcon && 'border-b border-gray-200'}`}>
         <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-10">
+            <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-10">
                 {isMaterialIcon ? <span className="material-symbols-outlined">{icon}</span> : ICONS[icon]}
             </div>
-            <p className="text-base font-normal leading-normal flex-1 truncate">{label}</p>
+            <p className="text-gray-900 text-base font-normal leading-normal flex-1 truncate">{label}</p>
         </div>
         <div className="shrink-0">
-            <label className={`relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-600 p-0.5 transition-colors ${enabled && 'bg-cyan-500 justify-end'}`}>
+            <label className={`relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-gray-200 p-0.5 transition-colors ${enabled && 'bg-blue-600 justify-end'}`}>
                 <div className="h-full w-[27px] rounded-full bg-white transition-transform" style={{ boxShadow: 'rgba(0, 0, 0, 0.15) 0px 3px 8px, rgba(0, 0, 0, 0.06) 0px 3px 1px' }}></div>
                 <input checked={enabled} onChange={e => onToggle(e.target.checked)} className="invisible absolute" type="checkbox" />
             </label>
@@ -163,43 +135,17 @@ const ToggleRow = ({ icon, label, enabled, onToggle, isMaterialIcon = false }: {
     </div>
 );
 const LinkRow = ({ icon, label, noBorder=false }: { icon: string, label: string, noBorder?: boolean }) => (
-     <a className={`flex items-center gap-4 px-4 py-3 justify-between hover:bg-slate-700 transition-colors ${!noBorder && 'border-b border-slate-700'}`} href="#">
+     <a className={`flex items-center gap-4 px-4 py-3 justify-between hover:bg-gray-100 transition-colors ${!noBorder && 'border-b border-gray-200'}`} href="#">
         <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center rounded-lg bg-slate-700 shrink-0 size-10">{ICONS[icon]}</div>
-            <p className="text-base font-normal leading-normal flex-1 truncate">{label}</p>
+            <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-10">{ICONS[icon]}</div>
+            <p className="text-gray-900 text-base font-normal leading-normal flex-1 truncate">{label}</p>
         </div>
-        <div className="shrink-0">
+        <div className="shrink-0 text-gray-400">
              <div className="flex size-7 items-center justify-center">
-                <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"></path></svg>
+                <svg fill="currentColor" height="20px" viewBox="0 0 256 256" width="20px" xmlns="http://www.w3.org/2000/svg"><path d="M181.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L164.69,128,98.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,181.66,133.66Z"></path></svg>
             </div>
         </div>
     </a>
 );
-
-// --- Bottom Nav Icons ---
-const SmileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
-const DentistIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 12l-3.5-4.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 12l3.5-4.5" /></svg>;
-const EducationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>;
-const DashboardIcon = () => <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M218.83,103.77l-80-75.48a1.14,1.14,0,0,1-.11-.11,16,16,0,0,0-21.53,0l-.11.11,L37.17,103.77A16,16,0,0,0,32,115.55V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V160h32v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V115.55A16,16,0,0,0,218.83,103.77ZM208,208H160V160a16,16,0,0,0-16-16H112a16,16,0,0,0-16,16v48H48V115.55l.11-.1L128,40l79.9,75.43.11.1Z"></path></svg>;
-const PlanIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>;
-const ChatIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
-const UserIcon = ({ isFill = false }: { isFill?: boolean }) => isFill ? 
-    <svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg"><path d="M230.93,220a8,8,0,0,1-6.93,4H32a8,8,0,0,1-6.92-12c15.23-26.33,38.7-45.21,66.09-54.16a72,72,0,1,1,73.66,0c27.39,8.95,50.86,27.83,66.09,54.16A8,8,0,0,1,230.93,220Z"></path></svg>
-    : <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
-
-const BottomNavItem = ({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) => {
-    const activeClasses = 'text-cyan-400 bg-cyan-900/60';
-    const inactiveClasses = 'text-slate-400 hover:bg-slate-700';
-    const textActiveClass = 'text-cyan-400 font-bold';
-    const textInactiveClass = '';
-
-    return (
-        <a onClick={onClick} className={`flex flex-1 flex-col items-center justify-end gap-1 py-1 rounded-md transition-colors cursor-pointer ${isActive ? activeClasses : inactiveClasses}`}>
-            <div className="flex h-8 items-center justify-center">{icon}</div>
-            <p className={`text-xs leading-normal tracking-[0.015em] ${isActive ? textActiveClass : textInactiveClass}`}>{label}</p>
-        </a>
-    );
-};
-
 
 export default UserProfilePage;
