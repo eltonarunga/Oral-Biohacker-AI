@@ -12,6 +12,7 @@ import FindDentist from './components/FindDentist';
 import SmileDesignStudio from './components/SmileDesignStudio';
 import UserProfilePage from './components/UserProfilePage';
 import HabitHistory from './components/HabitHistory';
+import { Spinner } from './components/common/Spinner';
 
 const guestProfile: UserProfile = {
   id: 'guest',
@@ -82,6 +83,7 @@ const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void;
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
   const [page, setPage] = useState<Page>('dashboard');
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
@@ -94,10 +96,11 @@ const App: React.FC = () => {
   });
   
   useEffect(() => {
-    // Auto-login if previously authenticated
     const wasAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
     if (wasAuthenticated) {
-        handleLogin(localStorage.getItem('isGuest') === 'true');
+        handleLogin(localStorage.getItem('isGuest') === 'true', true);
+    } else {
+        setIsLoading(false);
     }
   }, []);
 
@@ -179,7 +182,9 @@ const App: React.FC = () => {
   };
 
 
-  const handleLogin = (asGuest: boolean) => {
+  const handleLogin = (asGuest: boolean, isAutoLogin = false) => {
+    if (!isAutoLogin) setIsLoading(true);
+
     if (asGuest) {
       setProfiles([guestProfile]);
       setActiveProfileId(guestProfile.id);
@@ -195,6 +200,12 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
     setPage('dashboard');
     localStorage.setItem('isAuthenticated', 'true');
+
+    if (!isAutoLogin) {
+        setTimeout(() => setIsLoading(false), 500);
+    } else {
+        setIsLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -216,12 +227,24 @@ const App: React.FC = () => {
     );
   };
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen bg-slate-900"><Spinner /></div>;
+  }
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
   
   if (!activeProfile) {
-    return null; 
+    // This case should ideally not be reached if logic is correct, but as a fallback:
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
+        <p className="mb-4">Could not load user profile. The stored profile might be corrupted.</p>
+        <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+          Log Out
+        </button>
+      </div>
+    );
   }
 
   const renderPage = () => {
