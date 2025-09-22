@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Habit } from '../types';
-import { calculateStreak } from '../utils/habits';
+import { calculateStreak, getDateString } from '../utils/habits';
 
 interface HabitHistoryProps {
     habits: Habit[];
@@ -10,8 +11,8 @@ interface HabitHistoryProps {
 const DaySquare: React.FC<{ completed: boolean, isToday: boolean }> = ({ completed, isToday }) => {
     const baseClasses = "h-5 w-5 rounded";
     const completedClasses = "bg-green-500";
-    const incompleteClasses = "bg-gray-200";
-    const todayClasses = "ring-2 ring-offset-1 ring-blue-500";
+    const incompleteClasses = "bg-gray-200 dark:bg-gray-700";
+    const todayClasses = "ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-slate-900";
 
     return (
         <div 
@@ -31,12 +32,14 @@ const HabitHistoryRow: React.FC<{ habit: Habit, history: Record<string, string[]
         return d;
     });
 
+    const todayStr = getDateString(new Date());
+
     return (
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">{habit.name}</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">{habit.name}</h3>
                 {streak > 0 && (
-                    <div className="flex items-center gap-1 text-sm font-medium text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
+                    <div className="flex items-center gap-1 text-sm font-medium text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/50 rounded-full px-2 py-0.5">
                        <span className="material-symbols-outlined text-base">local_fire_department</span>
                        <span>{streak} day streak</span>
                     </div>
@@ -44,9 +47,9 @@ const HabitHistoryRow: React.FC<{ habit: Habit, history: Record<string, string[]
             </div>
             <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-30 gap-1.5">
                 {dates.map((date, i) => {
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = getDateString(date);
                     const isCompleted = history[dateStr]?.includes(habit.id) ?? false;
-                    const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                    const isToday = todayStr === dateStr;
                     return <DaySquare key={i} completed={isCompleted} isToday={isToday} />;
                 })}
             </div>

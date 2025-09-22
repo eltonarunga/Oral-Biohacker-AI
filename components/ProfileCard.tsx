@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, Goal } from '../types';
 import { Card } from './common/Card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -32,7 +32,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setEditableProfile(prev => ({ ...prev, [name]: name === 'salivaPH' ? parseFloat(value) : value }));
+        // FIX: Handle 'goals' textarea input separately to convert string back to Goal[]
+        if (name === 'goals') {
+            const goalTexts = value.split('\n');
+            const newGoals: Goal[] = goalTexts.map((text, index) => ({
+                id: editableProfile.goals[index]?.id || `goal-${Date.now()}-${index}`,
+                text,
+                isCompleted: editableProfile.goals[index]?.isCompleted || false,
+            })).filter(goal => goal.text.trim() !== '');
+            setEditableProfile(prev => ({ ...prev, goals: newGoals }));
+        } else {
+            setEditableProfile(prev => ({ ...prev, [name]: name === 'salivaPH' ? parseFloat(value) : value }));
+        }
     };
     
     const handleSave = () => {
@@ -73,7 +84,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
                     </div>
                      <div>
                         <label className="text-sm font-medium text-slate-400">Health Goals</label>
-                        <p className="text-sm text-gray-300">{profile.goals}</p>
+                        {/* FIX: Map goals array to a string to be rendered. */}
+                        <p className="text-sm text-gray-300">{profile.goals.map(g => g.text).join(', ')}</p>
                     </div>
                     <button onClick={() => setIsEditing(true)} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Edit Profile</button>
                 </div>
@@ -110,7 +122,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
                     </div>
                      <div>
                         <label className="text-sm font-medium text-slate-400 block mb-1">Health Goals</label>
-                        <textarea name="goals" value={editableProfile.goals} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={3}></textarea>
+                        {/* FIX: Textarea value must be a string. Join goals array into a newline-separated string. */}
+                        <textarea name="goals" value={editableProfile.goals.map(g => g.text).join('\n')} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={3}></textarea>
                     </div>
                     <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Save Changes</button>
                 </div>

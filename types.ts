@@ -2,6 +2,12 @@ import { type Chat } from "@google/genai";
 
 export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile' | 'habit-history';
 
+export interface Goal {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -9,7 +15,7 @@ export interface UserProfile {
   geneticRisk: 'Low' | 'Medium' | 'High';
   bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';
   lifestyle: string;
-  goals: string;
+  goals: Goal[];
   // New fields for profile page
   avatarUrl: string;
   bio: string;

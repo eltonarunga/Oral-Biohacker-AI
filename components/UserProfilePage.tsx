@@ -1,16 +1,108 @@
 
+
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, Goal } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
 
 interface UserProfilePageProps {
   profile: UserProfile;
   onUpdateProfile: (profile: UserProfile) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile }) => {
+
+const GoalManager: React.FC<{ profile: UserProfile, onUpdateProfile: (profile: UserProfile) => void }> = ({ profile, onUpdateProfile }) => {
+    const [newGoalText, setNewGoalText] = useState('');
+
+    const handleAddGoal = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newGoalText.trim() === '') return;
+        const newGoal: Goal = {
+            id: `goal-${Date.now()}-${Math.random()}`,
+            text: newGoalText.trim(),
+            isCompleted: false,
+        };
+        const updatedProfile = { ...profile, goals: [...profile.goals, newGoal] };
+        onUpdateProfile(updatedProfile);
+        setNewGoalText('');
+    };
+
+    const handleToggleGoal = (goalId: string) => {
+        const updatedGoals = profile.goals.map(g =>
+            g.id === goalId ? { ...g, isCompleted: !g.isCompleted } : g
+        );
+        onUpdateProfile({ ...profile, goals: updatedGoals });
+    };
+
+    const handleDeleteGoal = (goalId: string) => {
+        const updatedGoals = profile.goals.filter(g => g.id !== goalId);
+        onUpdateProfile({ ...profile, goals: updatedGoals });
+    };
+    
+    const activeGoals = profile.goals.filter(g => !g.isCompleted);
+    const completedGoals = profile.goals.filter(g => g.isCompleted);
+
+    return (
+        <div>
+            <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Goals</h3>
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-4">
+                <form onSubmit={handleAddGoal} className="flex gap-2">
+                    <input
+                        type="text"
+                        value={newGoalText}
+                        onChange={(e) => setNewGoalText(e.target.value)}
+                        placeholder="Add a new goal..."
+                        className="flex-1 w-full bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 rounded-lg p-2 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50" disabled={!newGoalText.trim()}>
+                        Add
+                    </button>
+                </form>
+
+                {activeGoals.length > 0 && <div className="space-y-2">
+                    <h4 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Active Goals</h4>
+                    {activeGoals.map(goal => (
+                        <GoalItem key={goal.id} goal={goal} onToggle={handleToggleGoal} onDelete={handleDeleteGoal} />
+                    ))}
+                </div>}
+                
+                {completedGoals.length > 0 && <div className="space-y-2 pt-2">
+                    <h4 className="text-gray-500 dark:text-gray-400 text-sm font-medium">Completed Goals</h4>
+                    {completedGoals.map(goal => (
+                        <GoalItem key={goal.id} goal={goal} onToggle={handleToggleGoal} onDelete={handleDeleteGoal} />
+                    ))}
+                </div>}
+
+                {profile.goals.length === 0 && (
+                    <p className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">No goals yet. Add one to get started!</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const GoalItem: React.FC<{ goal: Goal, onToggle: (id: string) => void, onDelete: (id: string) => void }> = ({ goal, onToggle, onDelete }) => (
+    <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-700/50 p-2 rounded-lg">
+        <input
+            type="checkbox"
+            checked={goal.isCompleted}
+            onChange={() => onToggle(goal.id)}
+            className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 bg-transparent text-blue-600 checked:bg-blue-600 checked:border-blue-600 focus:ring-blue-500"
+            aria-labelledby={`goal-text-${goal.id}`}
+        />
+        <p id={`goal-text-${goal.id}`} className={`flex-1 text-gray-800 dark:text-gray-200 text-sm ${goal.isCompleted ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>
+            {goal.text}
+        </p>
+        <button onClick={() => onDelete(goal.id)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400" aria-label={`Delete goal: ${goal.text}`}>
+             <span className="material-symbols-outlined text-xl">delete</span>
+        </button>
+    </div>
+);
+
+
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile, theme, onToggleTheme }) => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [darkModeEnabled, setDarkModeEnabled] = useState(false); // Default to light mode
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
     const handleAvatarSelect = (url: string) => {
@@ -31,17 +123,19 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                             </button>
                         </div>
                         <div className="flex flex-col items-center justify-center">
-                            <p className="text-gray-900 text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
-                            <p className="text-gray-500 text-base font-normal leading-normal text-center">{profile.bio}</p>
-                            <p className="text-gray-500 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
+                            <p className="text-gray-900 dark:text-gray-50 text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal text-center">{profile.bio}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
                         </div>
                     </div>
                 </div>
 
+                <GoalManager profile={profile} onUpdateProfile={onUpdateProfile} />
+
                 {/* Personal Information */}
                 <div>
-                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
+                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                         <InfoRow icon="Envelope" label="Email" value={profile.email} />
                         <InfoRow icon="Phone" label="Phone" value={profile.phone} />
                         <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
@@ -50,8 +144,8 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                 </div>
                 {/* Biometric Data */}
                 <div>
-                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
+                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                         <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
                         <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
                         <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
@@ -59,8 +153,8 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                 </div>
                 {/* Health Details */}
                 <div>
-                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
+                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                         <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
                         <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
                         <InfoRow icon="Pill" label="Medications" value={profile.medications} />
@@ -69,10 +163,10 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                 </div>
                 {/* App Settings */}
                 <div>
-                    <h3 className="text-gray-900 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
+                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
                         <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
-                        <ToggleRow icon="dark_mode" label="Dark Mode" enabled={darkModeEnabled} onToggle={setDarkModeEnabled} isMaterialIcon />
+                        <ToggleRow icon="dark_mode" label="Dark Mode" enabled={theme === 'dark'} onToggle={onToggleTheme} isMaterialIcon />
                         <LinkRow icon="ShieldCheck" label="Privacy Settings" />
                         <LinkRow icon="FileText" label="Terms of Service" />
                         <LinkRow icon="Question" label="Help & Support" noBorder/>
@@ -110,24 +204,24 @@ const ICONS: { [key: string]: React.ReactNode } = {
 };
 
 const InfoRow = ({ icon, label, value, noBorder = false }: { icon: string, label: string, value: string, noBorder?: boolean }) => (
-    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-gray-200'}`}>
-        <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-12">{ICONS[icon]}</div>
+    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-gray-200 dark:border-gray-700'}`}>
+        <div className="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 size-12">{ICONS[icon]}</div>
         <div className="flex flex-col justify-center">
-            <p className="text-gray-900 text-base font-medium leading-normal line-clamp-1">{label}</p>
-            <p className="text-gray-500 text-sm font-normal leading-normal line-clamp-2">{value}</p>
+            <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-1">{label}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">{value}</p>
         </div>
     </div>
 );
 const ToggleRow = ({ icon, label, enabled, onToggle, isMaterialIcon = false }: { icon: string, label: string, enabled: boolean, onToggle: (e:boolean) => void, isMaterialIcon?: boolean }) => (
-    <div className={`flex items-center gap-4 px-4 py-3 justify-between ${!isMaterialIcon && 'border-b border-gray-200'}`}>
+    <div className={`flex items-center gap-4 px-4 py-3 justify-between ${isMaterialIcon ? '' : 'border-b border-gray-200 dark:border-gray-700'}`}>
         <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-10">
+            <div className="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 size-10">
                 {isMaterialIcon ? <span className="material-symbols-outlined">{icon}</span> : ICONS[icon]}
             </div>
-            <p className="text-gray-900 text-base font-normal leading-normal flex-1 truncate">{label}</p>
+            <p className="text-gray-900 dark:text-gray-50 text-base font-normal leading-normal flex-1 truncate">{label}</p>
         </div>
         <div className="shrink-0">
-            <label className={`relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-gray-200 p-0.5 transition-colors ${enabled && 'bg-blue-600 justify-end'}`}>
+            <label className={`relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-gray-200 dark:bg-slate-700 p-0.5 transition-colors ${enabled && 'bg-blue-600 justify-end'}`}>
                 <div className="h-full w-[27px] rounded-full bg-white transition-transform" style={{ boxShadow: 'rgba(0, 0, 0, 0.15) 0px 3px 8px, rgba(0, 0, 0, 0.06) 0px 3px 1px' }}></div>
                 <input checked={enabled} onChange={e => onToggle(e.target.checked)} className="invisible absolute" type="checkbox" />
             </label>
@@ -135,12 +229,12 @@ const ToggleRow = ({ icon, label, enabled, onToggle, isMaterialIcon = false }: {
     </div>
 );
 const LinkRow = ({ icon, label, noBorder=false }: { icon: string, label: string, noBorder?: boolean }) => (
-     <a className={`flex items-center gap-4 px-4 py-3 justify-between hover:bg-gray-100 transition-colors ${!noBorder && 'border-b border-gray-200'}`} href="#">
+     <a className={`flex items-center gap-4 px-4 py-3 justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${!noBorder && 'border-b border-gray-200 dark:border-gray-700'}`} href="#">
         <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0 size-10">{ICONS[icon]}</div>
-            <p className="text-gray-900 text-base font-normal leading-normal flex-1 truncate">{label}</p>
+            <div className="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 size-10">{ICONS[icon]}</div>
+            <p className="text-gray-900 dark:text-gray-50 text-base font-normal leading-normal flex-1 truncate">{label}</p>
         </div>
-        <div className="shrink-0 text-gray-400">
+        <div className="shrink-0 text-gray-400 dark:text-gray-500">
              <div className="flex size-7 items-center justify-center">
                 <svg fill="currentColor" height="20px" viewBox="0 0 256 256" width="20px" xmlns="http://www.w3.org/2000/svg"><path d="M181.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L164.69,128,98.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,181.66,133.66Z"></path></svg>
             </div>

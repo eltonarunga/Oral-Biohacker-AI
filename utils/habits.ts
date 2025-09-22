@@ -1,5 +1,11 @@
-const getDateString = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+
+
+// Fix: Export the 'getDateString' function so it can be imported by other modules.
+export const getDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 /**

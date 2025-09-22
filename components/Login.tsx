@@ -1,12 +1,11 @@
 import React from 'react';
-import { Card } from './common/Card';
 
 interface LoginProps {
   onLogin: (asGuest: boolean) => void;
 }
 
 const ToothIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w.org/2000/svg" className="h-16 w-16 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9.34 4.23a2.42 2.42 0 0 1 2.33-2.23h.04a2.42 2.42 0 0 1 2.33 2.23l.1.75c.21 1.63.76 3.23 1.54 4.73.78 1.5.58 3.34-.52 4.54l-.1.1a5.07 5.07 0 0 1-7.14 0l-.1-.1a2.82 2.82 0 0 1-.52-4.54c.78-1.5 1.33-3.1 1.54-4.73l.1-.75Z" />
       <path d="M10.25 15.58c.84-.71 1.76-1.08 2.75-1.08s1.91.37 2.75 1.08" />
       <path d="M12 22v-3" />
@@ -18,7 +17,7 @@ const ToothIcon = () => (
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4">
-        <Card className="max-w-md w-full text-center">
+        <div className="max-w-md w-full text-center bg-slate-800 border border-slate-700 rounded-2xl shadow-sm p-6">
             <div className="flex justify-center mb-4">
                 <ToothIcon />
             </div>
@@ -39,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     Continue as Guest
                 </button>
             </div>
-        </Card>
+        </div>
          <footer className="text-center p-4 text-slate-500 text-sm mt-8">
             <p>Disclaimer: This is an AI-powered tool and not a substitute for professional medical advice. Always consult with a qualified healthcare provider.</p>
         </footer>

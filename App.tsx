@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import { mockProfiles } from './data/mockProfiles';
-import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit } from './types';
+import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, Goal } from './types';
 import PersonalizedPlanComponent from './components/PersonalizedPlan';
 import SymptomChecker from './components/SymptomChecker';
 import EducationalContent from './components/EducationalContent';
@@ -12,6 +14,7 @@ import FindDentist from './components/FindDentist';
 import SmileDesignStudio from './components/SmileDesignStudio';
 import UserProfilePage from './components/UserProfilePage';
 import HabitHistory from './components/HabitHistory';
+import { getDateString } from './utils/habits';
 import { Spinner } from './components/common/Spinner';
 
 const guestProfile: UserProfile = {
@@ -21,7 +24,10 @@ const guestProfile: UserProfile = {
   geneticRisk: 'Low',
   bruxism: 'None',
   lifestyle: 'Exploring the application.',
-  goals: 'See what OralBio AI can do.',
+  goals: [
+    { id: 'g-guest-1', text: 'Learn about oil pulling', isCompleted: false },
+    { id: 'g-guest-2', text: 'Complete first symptom check', isCompleted: false },
+  ],
   avatarUrl: 'https://images.unsplash.com/photo-1549078642-b2c444611bf5?q=80&w=2070&auto=format&fit=crop',
   bio: 'Curious about oral biohacking',
   joinDate: new Date().getFullYear().toString(),
@@ -54,34 +60,70 @@ const initialHabitsData: Habit[] = [
   { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
 ];
 
-const BottomNavItem: React.FC<{label: string, icon: string, isActive: boolean, onClick: () => void}> = ({ label, icon, isActive, onClick }) => {
-  const activeClasses = 'text-white bg-blue-600';
-  const inactiveClasses = 'text-gray-500';
+const navItems: { page: Page; label: string; icon: string }[] = [
+    { page: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { page: 'plan', label: 'Plan', icon: 'list_alt' },
+    { page: 'symptom-checker', label: 'Checker', icon: 'stethoscope' },
+    { page: 'smile-design-studio', label: 'Smile', icon: 'face_retouching_natural' },
+    { page: 'find-dentist', label: 'Dentist', icon: 'local_hospital' },
+    { page: 'education', label: 'Learn', icon: 'school' },
+    { page: 'profile', label: 'Profile', icon: 'person' },
+];
 
-  return (
-    <a onClick={onClick} className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-lg py-1 cursor-pointer transition-colors ${isActive ? activeClasses : inactiveClasses}`}>
-      <div className={`flex h-8 w-8 items-center justify-center`}>
-        <span className="material-symbols-outlined">{icon}</span>
-      </div>
-      <p className={`text-xs font-medium leading-normal tracking-[0.015em]`}>{label}</p>
-    </a>
-  )
+const BottomNavItem = React.forwardRef<HTMLAnchorElement, {label: string, icon: string, isActive: boolean, onClick: () => void}>(({ label, icon, isActive, onClick }, ref) => {
+    const activeClasses = 'text-white';
+    const inactiveClasses = 'text-gray-500 dark:text-gray-400';
+
+    return (
+        <a ref={ref} onClick={onClick} className={`relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-1 cursor-pointer transition-colors duration-300 ${isActive ? activeClasses : inactiveClasses}`}>
+            <div className={`flex h-8 w-8 items-center justify-center`}>
+                <span className="material-symbols-outlined">{icon}</span>
+            </div>
+            <p className={`text-xs font-medium leading-normal tracking-[0.015em]`}>{label}</p>
+        </a>
+    );
+});
+
+const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void; }> = ({ currentPage, onNavigate }) => {
+    const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+    const [indicatorStyle, setIndicatorStyle] = useState({});
+
+    useEffect(() => {
+        const activeIndex = navItems.findIndex(item => item.page === currentPage);
+        const activeItem = itemRefs.current[activeIndex];
+
+        if (activeItem) {
+            setIndicatorStyle({
+                left: `${activeItem.offsetLeft}px`,
+                width: `${activeItem.offsetWidth}px`,
+            });
+        }
+    }, [currentPage]);
+
+    return (
+        <div className="relative flex gap-1 border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-2 pb-3 pt-2">
+            <div 
+                className="absolute top-0 bottom-0 my-auto h-[calc(100%-1rem)] bg-blue-600 rounded-lg transition-all duration-300 ease-in-out"
+                style={indicatorStyle}
+                aria-hidden="true"
+            />
+            {navItems.map((item, index) => (
+                 <BottomNavItem 
+                    key={item.page}
+                    // Fix: The ref callback should not return a value. Wrapped in curly braces to ensure it returns void.
+                    ref={el => { itemRefs.current[index] = el }}
+                    label={item.label} 
+                    icon={item.icon} 
+                    isActive={currentPage === item.page} 
+                    onClick={() => onNavigate(item.page)} 
+                />
+            ))}
+        </div>
+    );
 };
 
-const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void; }> = ({ currentPage, onNavigate }) => (
-    <div className="flex gap-1 border-t border-gray-200 bg-white/80 backdrop-blur-sm px-2 pb-3 pt-2">
-      <BottomNavItem label="Dashboard" icon="dashboard" isActive={currentPage === 'dashboard'} onClick={() => onNavigate('dashboard')} />
-      <BottomNavItem label="Plan" icon="list_alt" isActive={currentPage === 'plan'} onClick={() => onNavigate('plan')} />
-      <BottomNavItem label="Checker" icon="stethoscope" isActive={currentPage === 'symptom-checker'} onClick={() => onNavigate('symptom-checker')} />
-      <BottomNavItem label="Smile" icon="face_retouching_natural" isActive={currentPage === 'smile-design-studio'} onClick={() => onNavigate('smile-design-studio')} />
-      <BottomNavItem label="Dentist" icon="local_hospital" isActive={currentPage === 'find-dentist'} onClick={() => onNavigate('find-dentist')} />
-      <BottomNavItem label="Learn" icon="school" isActive={currentPage === 'education'} onClick={() => onNavigate('education')} />
-      <BottomNavItem label="Profile" icon="person" isActive={currentPage === 'profile'} onClick={() => onNavigate('profile')} />
-    </div>
-);
 
-
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
@@ -94,8 +136,31 @@ const App: React.FC = () => {
     const savedData = localStorage.getItem('profilesData');
     return savedData ? JSON.parse(savedData) : {};
   });
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      return savedTheme;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
   
   useEffect(() => {
+    // Auto-login if previously authenticated
     const wasAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
     if (wasAuthenticated) {
         handleLogin(localStorage.getItem('isGuest') === 'true', true);
@@ -158,7 +223,7 @@ const App: React.FC = () => {
     if (!activeProfileId) return;
 
     const currentData = getActiveProfileData();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getDateString(new Date());
     const newHistory = { ...currentData.habitHistory };
     const todaysCompletions = newHistory[today] ? [...newHistory[today]] : [];
     const habitIndex = todaysCompletions.indexOf(habitId);
@@ -238,10 +303,10 @@ const App: React.FC = () => {
   if (!activeProfile) {
     // This case should ideally not be reached if logic is correct, but as a fallback:
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
-        <p className="mb-4">Could not load user profile. The stored profile might be corrupted.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 text-center">
+        <p className="mb-4">Could not load user profile. The stored profile might be corrupted or missing.</p>
         <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-          Log Out
+          Log Out and Start Over
         </button>
       </div>
     );
@@ -263,7 +328,12 @@ const App: React.FC = () => {
       case 'education':
         return <div className="p-4"><EducationalContent /></div>;
       case 'profile':
-        return <UserProfilePage profile={activeProfile} onUpdateProfile={handleUpdateProfile} />;
+        return <UserProfilePage 
+                  profile={activeProfile} 
+                  onUpdateProfile={handleUpdateProfile} 
+                  theme={theme}
+                  onToggleTheme={handleToggleTheme}
+                />;
       case 'habit-history':
         return <HabitHistory
                   habits={activeProfileData.habits}
@@ -292,7 +362,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col bg-white justify-between">
+    <div className="relative flex size-full min-h-screen flex-col bg-white dark:bg-slate-900 justify-between">
       <div className="flex flex-col flex-1">
         <Header page={page} onNavigate={handleNavigate} onLogout={handleLogout} />
         <main className="flex-1 overflow-y-auto">
@@ -301,10 +371,8 @@ const App: React.FC = () => {
       </div>
       <footer className="sticky bottom-0 z-10">
         <BottomNav currentPage={page} onNavigate={handleNavigate} />
-        <div className="h-5 bg-white/80 backdrop-blur-sm"></div>
+        <div className="h-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"></div>
       </footer>
     </div>
   );
 };
-
-export default App;

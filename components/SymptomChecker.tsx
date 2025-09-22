@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from './common/Spinner';
 import { SymptomCheckerState, ChatMessage } from '../types';
@@ -70,8 +71,8 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                             <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
                                 <span className="material-symbols-outlined text-lg">spark</span>
                             </div>
-                            <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
-                                <p className="text-slate-800 text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                            <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
+                                <p className="text-slate-800 dark:text-slate-200 text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
                             </div>
                         </div>
                     ) : (
@@ -87,7 +88,7 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                         <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
                             <span className="material-symbols-outlined text-lg">spark</span>
                         </div>
-                        <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
+                        <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
                             <Spinner />
                         </div>
                     </div>
@@ -101,7 +102,7 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                     key={index}
                     onClick={() => handleSendMessage(reply)}
                     disabled={state.isLoading}
-                    className="flex items-center justify-center gap-x-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium leading-normal text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="flex items-center justify-center gap-x-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-medium leading-normal text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         {reply}
                  </button>
                ))}
@@ -109,7 +110,7 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
 
             <form onSubmit={handleFormSubmit} className="relative mt-4">
                 <input
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-full text-slate-900 focus:outline-0 focus:ring-2 focus:ring-cyan-500 border-slate-200 bg-slate-100 h-14 placeholder:text-slate-500 p-4 pr-12 text-base font-normal leading-normal"
+                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-full text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-cyan-500 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 h-14 placeholder:text-slate-500 dark:placeholder:text-slate-400 p-4 pr-12 text-base font-normal leading-normal"
                     placeholder="Type your message..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

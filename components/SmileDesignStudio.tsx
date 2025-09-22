@@ -133,12 +133,12 @@ const SmileDesignStudio: React.FC = () => {
             <Card title="Smile Design Studio" icon={<SmileIcon />}>
                 <div className="space-y-6">
                     {!originalImage && (
-                        <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <div className="text-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <h3 className="mt-2 text-sm font-medium text-gray-800">Show us your smile</h3>
-                            <p className="mt-1 text-sm text-gray-500">Upload a photo or use your camera. For best results, use a clear, front-facing photo.</p>
+                            <h3 className="mt-2 text-sm font-medium text-gray-800 dark:text-gray-200">Show us your smile</h3>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Upload a photo or use your camera. For best results, use a clear, front-facing photo.</p>
                             <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
                                  <input type="file" accept="image/png, image/jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
                                  <button onClick={triggerFileSelect} className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
@@ -155,18 +155,18 @@ const SmileDesignStudio: React.FC = () => {
                     {originalImage && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                             <div>
-                                <h3 className="text-lg font-semibold text-center mb-2 text-gray-600">Your Smile</h3>
+                                <h3 className="text-lg font-semibold text-center mb-2 text-gray-600 dark:text-gray-400">Your Smile</h3>
                                  <img src={originalImage} alt="User's smile" className="rounded-lg shadow-md w-full object-contain max-h-80" />
                             </div>
                             <div>
-                                 <h3 className="text-lg font-semibold text-center mb-2 text-blue-600">AI-Enhanced Smile</h3>
-                                 <div className="bg-gray-100 rounded-lg shadow-md w-full min-h-[200px] flex items-center justify-center aspect-square max-h-80 mx-auto">
+                                 <h3 className="text-lg font-semibold text-center mb-2 text-blue-600 dark:text-blue-400">AI-Enhanced Smile</h3>
+                                 <div className="bg-gray-100 dark:bg-slate-700 rounded-lg shadow-md w-full min-h-[200px] flex items-center justify-center aspect-square max-h-80 mx-auto">
                                     {isLoading && <Spinner />}
                                     {!isLoading && generatedResult?.image && (
                                         <img src={`data:image/png;base64,${generatedResult.image}`} alt="AI generated smile" className="rounded-lg w-full object-contain max-h-80" />
                                     )}
                                     {!isLoading && !generatedResult && !error && (
-                                        <p className="text-gray-500 text-center p-4">Your redesigned smile will appear here.</p>
+                                        <p className="text-gray-500 dark:text-gray-400 text-center p-4">Your redesigned smile will appear here.</p>
                                     )}
                                     {!isLoading && error && (
                                         <p className="text-red-500 text-center p-4">Could not generate image.</p>
@@ -176,14 +176,14 @@ const SmileDesignStudio: React.FC = () => {
                         </div>
                     )}
 
-                    {error && <p className="text-red-700 text-center bg-red-100 p-3 rounded-lg">{error}</p>}
+                    {error && <p className="text-red-700 dark:text-red-300 text-center bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>}
                     
                     {originalImage && (
                         <div className="flex flex-col sm:flex-row gap-4 mt-4">
                             <button onClick={handleDesignClick} disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {isLoading ? 'Designing...' : '✨ Redesign My Smile'}
                             </button>
-                             <button onClick={() => resetState()} disabled={isLoading} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50">
+                             <button onClick={() => resetState()} disabled={isLoading} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-gray-200 font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50">
                                 Start Over
                             </button>
                         </div>

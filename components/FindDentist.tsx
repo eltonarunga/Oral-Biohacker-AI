@@ -53,7 +53,7 @@ const FindDentist: React.FC = () => {
             <div className="space-y-6">
                 {!result && !isLoading && (
                      <div className="text-center">
-                        <p className="text-gray-500 mb-4">Use your current location to find nearby dental professionals recommended by our AI.</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">Use your current location to find nearby dental professionals recommended by our AI.</p>
                         <button 
                             onClick={handleFindDentists} 
                             disabled={isLoading}
@@ -66,22 +66,22 @@ const FindDentist: React.FC = () => {
                
                 {isLoading && <Spinner />}
                 
-                {error && <p className="text-red-700 text-center bg-red-100 p-3 rounded-lg">{error}</p>}
+                {error && <p className="text-red-700 dark:text-red-300 text-center bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>}
                 
                 {result && (
                     <div>
-                        <h3 className="text-lg font-semibold mb-3 text-blue-600">Here are some dentists found near you:</h3>
+                        <h3 className="text-lg font-semibold mb-3 text-blue-600 dark:text-blue-400">Here are some dentists found near you:</h3>
                         <ul className="space-y-4">
                             {result.dentists.map((dentist, index) => (
-                                <li key={index} className="bg-white border border-gray-200 p-4 rounded-lg">
-                                    <h4 className="font-bold text-gray-900 text-md">{dentist.name}</h4>
-                                    <p className="text-sm text-gray-600">{dentist.address}</p>
-                                    <p className="text-sm text-gray-600">{dentist.phone}</p>
+                                <li key={index} className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 p-4 rounded-lg">
+                                    <h4 className="font-bold text-gray-900 dark:text-gray-50 text-md">{dentist.name}</h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{dentist.address}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{dentist.phone}</p>
                                     <a 
                                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dentist.address)}`}
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="text-sm text-blue-500 hover:underline mt-2 inline-block"
+                                        className="text-sm text-blue-500 dark:text-blue-400 hover:underline mt-2 inline-block"
                                     >
                                         View on Map &raquo;
                                     </a>
@@ -91,11 +91,11 @@ const FindDentist: React.FC = () => {
 
                         {result.sources.length > 0 && (
                             <div className="mt-6">
-                                <h4 className="text-md font-semibold text-gray-500 mb-2">Sources:</h4>
+                                <h4 className="text-md font-semibold text-gray-500 dark:text-gray-400 mb-2">Sources:</h4>
                                 <ul className="list-disc list-inside text-sm space-y-1">
                                     {result.sources.map((source, index) => (
                                         <li key={index}>
-                                            <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                            <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
                                                 {source.web.title || source.web.uri}
                                             </a>
                                         </li>

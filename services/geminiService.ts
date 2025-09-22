@@ -68,6 +68,10 @@ const planSchema = {
 
 
 export const generatePersonalizedPlan = async (profile: UserProfile): Promise<PersonalizedPlan> => {
+    const goalsText = profile.goals.length > 0
+        ? profile.goals.map(g => `- ${g.text}${g.isCompleted ? ' (Completed)' : ''}`).join('\n')
+        : 'No specific goals listed.';
+        
     const prompt = `
         Based on the following user profile, create a personalized oral biohacking plan.
         The user wants to improve their oral and systemic health.
@@ -77,7 +81,8 @@ export const generatePersonalizedPlan = async (profile: UserProfile): Promise<Pe
         - Genetic Risk for Periodontitis: ${profile.geneticRisk}
         - Bruxism (Teeth Grinding/Clenching): ${profile.bruxism}
         - Lifestyle Notes: ${profile.lifestyle}
-        - Primary Health Goals: ${profile.goals}
+        - Primary Health Goals:
+          ${goalsText}
 
         Generate a JSON object that follows the provided schema. The plan should be actionable, scientific, and tailored to the user's specific data points.
         For alerts, analyze the profile to determine the status of markers like 'Inflammation', 'Acidic Environment', and 'Jaw Tension'.
