@@ -44,12 +44,14 @@ export interface PersonalizedPlan {
 export interface ChatMessage {
     role: 'user' | 'model';
     text: string;
+    sources?: GroundingChunk[];
 }
 
 export interface SymptomCheckerState {
     chat: Chat | null;
     history: ChatMessage[];
     isLoading: boolean;
+    suggestedReplies: string[];
 }
 
 export interface ProfileData {

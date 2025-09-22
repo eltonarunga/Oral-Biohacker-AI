@@ -171,7 +171,7 @@ export const App: React.FC = () => {
 
   const getActiveProfileData = (): ProfileData => {
     if (!activeProfileId) return {} as ProfileData;
-    const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false };
+    const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false, suggestedReplies: [] };
     const data: Partial<ProfileData> = profilesData[activeProfileId] ?? {};
 
     return {

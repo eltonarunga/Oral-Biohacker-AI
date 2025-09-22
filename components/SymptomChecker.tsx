@@ -1,8 +1,5 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Spinner } from './common/Spinner';
-import { SymptomCheckerState, ChatMessage } from '../types';
+import { SymptomCheckerState, ChatMessage, GroundingChunk } from '../types';
 import { createSymptomCheckerChat, sendMessageToSymptomChecker } from '../services/geminiService';
 
 interface SymptomCheckerProps {
@@ -10,11 +7,63 @@ interface SymptomCheckerProps {
     setState: React.Dispatch<React.SetStateAction<SymptomCheckerState>>;
 }
 
-const suggestedReplies = [
-    "A few days",
-    "It's about the same",
-    "Yes, it's worse",
-];
+const FormattedMessage: React.FC<{ text: string }> = ({ text }) => {
+    // Remove the suggestions block and then format the remaining text
+    const cleanText = text.replace(/\[SUGGESTIONS\][\s\S]*/, '');
+    
+    // Convert markdown-like syntax to HTML
+    const formattedHtml = cleanText
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+        .replace(/\n\s*[\*\-]\s/g, '<br>• '); // List items
+
+    return (
+      <p 
+        className="text-slate-800 dark:text-slate-200 text-sm" 
+        style={{ whiteSpace: 'pre-wrap' }} 
+        dangerouslySetInnerHTML={{ __html: formattedHtml }}
+      />
+    );
+};
+
+const Sources: React.FC<{ sources: GroundingChunk[] }> = ({ sources }) => {
+    if (!sources || sources.length === 0) return null;
+    return (
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
+            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Sources</h4>
+            <ul className="space-y-1">
+                {sources.map((source, index) => (
+                    <li key={index}>
+                        <a 
+                            href={source.web.uri} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                            <span>{source.web.title || source.web.uri}</span>
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+const TypingIndicator: React.FC = () => (
+    <div className="flex items-start gap-3 message-enter">
+        <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
+            <span className="material-symbols-outlined text-lg">spark</span>
+        </div>
+        <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3">
+            <div className="flex items-center justify-center space-x-1">
+                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce"></div>
+            </div>
+        </div>
+    </div>
+);
+
 
 const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
     const [input, setInput] = useState('');
@@ -24,13 +73,13 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    useEffect(scrollToBottom, [state.history]);
+    useEffect(scrollToBottom, [state.history, state.isLoading]);
 
     useEffect(() => {
         const initChat = () => {
             const newChat = createSymptomCheckerChat();
-            const initialMessage: ChatMessage = { role: 'model', text: "Hello! I'm your personal health assistant. How are you feeling today? Please describe your symptoms." };
-            setState({ chat: newChat, history: [initialMessage], isLoading: false });
+            const initialMessage: ChatMessage = { role: 'model', text: "Hello! I'm your OralBio AI assistant. How are you feeling today? Please describe any symptoms you're experiencing." };
+            setState({ chat: newChat, history: [initialMessage], isLoading: false, suggestedReplies: ["I have a toothache", "My gums are bleeding", "I have bad breath"] });
         };
         if (!state.chat) {
             initChat();
@@ -41,13 +90,33 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
         if (!messageText.trim() || !state.chat || state.isLoading) return;
 
         const userMessage: ChatMessage = { role: 'user', text: messageText };
-        setState(prev => ({ ...prev, history: [...prev.history, userMessage], isLoading: true }));
+        setState(prev => ({ ...prev, history: [...prev.history, userMessage], isLoading: true, suggestedReplies: [] }));
         setInput('');
 
         try {
-            const responseText = await sendMessageToSymptomChecker(state.chat, messageText);
-            const modelMessage: ChatMessage = { role: 'model', text: responseText };
-            setState(prev => ({ ...prev, history: [...prev.history, modelMessage] }));
+            const response = await sendMessageToSymptomChecker(state.chat, messageText);
+            const fullResponse = response.text;
+
+            const sources = (response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingChunk[]) || [];
+
+            const suggestionMatch = fullResponse.match(/\[SUGGESTIONS\]\s*(\[[\s\S]*\])/);
+            let suggestions: string[] = [];
+            if (suggestionMatch && suggestionMatch[1]) {
+                try {
+                    suggestions = JSON.parse(suggestionMatch[1]);
+                } catch (e) {
+                    console.error("Failed to parse suggested replies:", e);
+                }
+            }
+            
+            const modelMessage: ChatMessage = { role: 'model', text: fullResponse, sources: sources };
+            
+            setState(prev => ({ 
+                ...prev, 
+                history: [...prev.history, modelMessage], 
+                suggestedReplies: suggestions 
+            }));
+
         } catch (error) {
             console.error("Symptom checker failed:", error);
             const errorMessage: ChatMessage = { role: 'model', text: 'Sorry, I encountered an error. Please try again.' };
@@ -67,46 +136,46 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
             <div className="space-y-4">
                 {state.history.map((msg, index) => (
                     msg.role === 'model' ? (
-                        <div key={index} className="flex items-start gap-3">
+                        <div key={index} className="flex items-start gap-3 message-enter">
                             <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
                                 <span className="material-symbols-outlined text-lg">spark</span>
                             </div>
                             <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
-                                <p className="text-slate-800 dark:text-slate-200 text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                                <FormattedMessage text={msg.text} />
+                                <Sources sources={msg.sources || []} />
                             </div>
                         </div>
                     ) : (
-                        <div key={index} className="flex items-start gap-3 justify-end">
-                            <div className="bg-cyan-500 text-white rounded-2xl rounded-tr-none p-3 max-w-[80%]">
+                        <div key={index} className="flex items-start gap-3 justify-end message-enter">
+                            <div className="bg-blue-600 text-white rounded-2xl rounded-bl-none p-3 max-w-[80%]">
                                 <p className="text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                            </div>
+                            <div className="flex-shrink-0 size-8 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 flex items-center justify-center rounded-full">
+                                <span className="material-symbols-outlined text-lg">person</span>
                             </div>
                         </div>
                     )
                 ))}
-                 {state.isLoading && (
-                    <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
-                            <span className="material-symbols-outlined text-lg">spark</span>
-                        </div>
-                        <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
-                            <Spinner />
-                        </div>
-                    </div>
-                )}
+                
+                {state.isLoading && state.history.length > 0 && state.history[state.history.length - 1].role === 'user' && <TypingIndicator />}
+
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="flex gap-3 flex-wrap mt-6">
-               {suggestedReplies.map((reply, index) => (
-                 <button 
-                    key={index}
-                    onClick={() => handleSendMessage(reply)}
-                    disabled={state.isLoading}
-                    className="flex items-center justify-center gap-x-2 rounded-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-medium leading-normal text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        {reply}
-                 </button>
-               ))}
-            </div>
+            {state.suggestedReplies.length > 0 && !state.isLoading && (
+                 <div className="flex gap-2 flex-wrap justify-center mt-6">
+                   {state.suggestedReplies.map((reply, index) => (
+                     <button 
+                        key={index}
+                        onClick={() => handleSendMessage(reply)}
+                        disabled={state.isLoading}
+                        className="rounded-full border border-blue-500/50 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            {reply}
+                     </button>
+                   ))}
+                </div>
+            )}
+
 
             <form onSubmit={handleFormSubmit} className="relative mt-4">
                 <input
