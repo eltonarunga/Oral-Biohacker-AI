@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Habit } from '../types';
-import { calculateStreak, getDateString } from '../utils/habits';
+import { getDateString } from '../utils/habits';
+import HabitTracker from './HabitTracker';
 
 interface HabitHistoryProps {
     habits: Habit[];
@@ -23,8 +24,6 @@ const DaySquare: React.FC<{ completed: boolean, isToday: boolean }> = ({ complet
 };
 
 const HabitHistoryRow: React.FC<{ habit: Habit, history: Record<string, string[]> }> = ({ habit, history }) => {
-    const streak = calculateStreak(habit.id, history);
-    
     // Create an array of the last 30 dates, ending with today
     const dates = Array.from({ length: 30 }).map((_, i) => {
         const d = new Date();
@@ -38,12 +37,7 @@ const HabitHistoryRow: React.FC<{ habit: Habit, history: Record<string, string[]
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">{habit.name}</h3>
-                {streak > 0 && (
-                    <div className="flex items-center gap-1 text-sm font-medium text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/50 rounded-full px-2 py-0.5">
-                       <span className="material-symbols-outlined text-base">local_fire_department</span>
-                       <span>{streak} day streak</span>
-                    </div>
-                )}
+                <HabitTracker habitId={habit.id} habitHistory={history} />
             </div>
             <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-30 gap-1.5">
                 {dates.map((date, i) => {

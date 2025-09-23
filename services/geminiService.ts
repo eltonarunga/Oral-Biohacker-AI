@@ -66,26 +66,57 @@ const planSchema = {
     required: ["supplements", "routines", "nutrition", "alerts"]
 };
 
+const getAge = (dateString: string): number | string => {
+    if (!dateString || dateString === 'N/A') {
+        return 'N/A';
+    }
+    try {
+        const birthDate = new Date(dateString);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age > 0 ? age : 'N/A';
+    } catch (e) {
+        return 'N/A';
+    }
+};
 
 export const generatePersonalizedPlan = async (profile: UserProfile): Promise<PersonalizedPlan> => {
     const goalsText = profile.goals.length > 0
         ? profile.goals.map(g => `- ${g.text}${g.isCompleted ? ' (Completed)' : ''}`).join('\n')
         : 'No specific goals listed.';
         
+    const age = getAge(profile.dateOfBirth);
+
     const prompt = `
-        Based on the following user profile, create a personalized oral biohacking plan.
-        The user wants to improve their oral and systemic health.
-        
+        Based on the following comprehensive user profile, create a highly personalized oral biohacking plan.
+        The user wants to improve their oral and systemic health. The plan should consider how oral health impacts overall well-being and vice versa.
+
         User Profile:
+        - Age: ${age}
+        - Gender: ${profile.gender}
         - Saliva pH: ${profile.salivaPH}
         - Genetic Risk for Periodontitis: ${profile.geneticRisk}
         - Bruxism (Teeth Grinding/Clenching): ${profile.bruxism}
         - Lifestyle Notes: ${profile.lifestyle}
         - Primary Health Goals:
           ${goalsText}
+        
+        Additional Health Information:
+        - Dietary Restrictions: ${profile.dietaryRestrictions || 'None specified'}
+        - Allergies: ${profile.allergies || 'None specified'}
+        - Current Medications: ${profile.medications || 'None specified'}
+        - Height: ${profile.height > 0 ? `${profile.height} cm` : 'N/A'}
+        - Weight: ${profile.weight > 0 ? `${profile.weight} kg` : 'N/A'}
 
-        Generate a JSON object that follows the provided schema. The plan should be actionable, scientific, and tailored to the user's specific data points.
-        For alerts, analyze the profile to determine the status of markers like 'Inflammation', 'Acidic Environment', and 'Jaw Tension'.
+        Generate a JSON object that follows the provided schema. The plan must be actionable, scientific, and tailored to the user's specific data points.
+        - Cross-reference medications with supplement recommendations for potential interactions.
+        - Tailor nutritional advice to their dietary restrictions.
+        - Use all provided data to create nuanced alerts and recommendations. For example, if a user is on medications that cause dry mouth, the plan should address that.
+        - For alerts, analyze the profile to determine the status of markers like 'Inflammation', 'Acidic Environment', 'Jaw Tension', and 'Nutrient Deficiency Risk'.
     `;
 
     try {

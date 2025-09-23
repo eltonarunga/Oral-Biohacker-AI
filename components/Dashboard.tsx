@@ -2,8 +2,9 @@
 
 import React, { useMemo } from 'react';
 import { UserProfile, Habit, Page } from '../types';
-import { calculateStreak, getDateString } from '../utils/habits';
+import { getDateString } from '../utils/habits';
 import Goals from './Goals';
+import HabitTracker from './HabitTracker';
 
 interface DashboardProps {
     profile: UserProfile;
@@ -18,9 +19,9 @@ interface HabitItemProps {
     onToggle: (id: string) => void;
     isLast: boolean;
     isCompleted: boolean;
-    streak: number;
+    habitHistory: Record<string, string[]>;
 }
-const HabitItem: React.FC<HabitItemProps> = ({ habit, onToggle, isLast, isCompleted, streak }) => (
+const HabitItem: React.FC<HabitItemProps> = ({ habit, onToggle, isLast, isCompleted, habitHistory }) => (
     <div className={`flex items-center gap-4 bg-white dark:bg-slate-800 px-4 py-3 justify-between ${!isLast ? 'border-b border-gray-200 dark:border-gray-700' : ''}`}>
         <div className="flex items-center gap-4">
             <div className="text-blue-600 dark:text-blue-400 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 shrink-0 size-12">
@@ -30,12 +31,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, onToggle, isLast, isComple
                 <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-1">{habit.name}</p>
                 <div className="flex items-center gap-2">
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">{habit.time}</p>
-                    {streak > 0 && (
-                         <div className="flex items-center gap-1 text-xs font-medium text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/50 rounded-full px-1.5 py-0.5">
-                           <span className="material-symbols-outlined text-sm">local_fire_department</span>
-                           <span>{streak} day streak</span>
-                        </div>
-                    )}
+                    <HabitTracker habitId={habit.id} habitHistory={habitHistory} />
                 </div>
             </div>
         </div>
@@ -122,7 +118,6 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, onNavigate, habits, habi
                         <div className="flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                             {group.habits.map((habit, index) => {
                                 const isCompleted = todaysCompletions.includes(habit.id);
-                                const streak = calculateStreak(habit.id, habitHistory);
                                 return (
                                     <HabitItem 
                                         key={habit.id} 
@@ -130,7 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, onNavigate, habits, habi
                                         onToggle={onToggleHabit} 
                                         isLast={index === group.habits.length - 1} 
                                         isCompleted={isCompleted}
-                                        streak={streak}
+                                        habitHistory={habitHistory}
                                     />
                                 );
                             })}

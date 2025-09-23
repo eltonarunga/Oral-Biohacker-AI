@@ -32,7 +32,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        // FIX: Handle 'goals' textarea input separately to convert string back to Goal[]
         if (name === 'goals') {
             const goalTexts = value.split('\n');
             const newGoals: Goal[] = goalTexts.map((text, index) => ({
@@ -42,7 +41,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
             })).filter(goal => goal.text.trim() !== '');
             setEditableProfile(prev => ({ ...prev, goals: newGoals }));
         } else {
-            setEditableProfile(prev => ({ ...prev, [name]: name === 'salivaPH' ? parseFloat(value) : value }));
+            const numericFields = ['salivaPH', 'height', 'weight'];
+            const isNumeric = numericFields.includes(name);
+            setEditableProfile(prev => ({ ...prev, [name]: isNumeric ? parseFloat(value) || 0 : value }));
         }
     };
     
@@ -78,16 +79,61 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
                         <label className="text-sm font-medium text-slate-400">Bruxism (Clenching/Grinding)</label>
                         <p className="text-lg font-semibold text-white">{profile.bruxism}</p>
                     </div>
+                    
+                    <h3 className="text-md font-semibold text-slate-300 !mt-6 border-t border-slate-700 pt-4">Personal Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-slate-400">Gender</label>
+                            <p className="text-md font-semibold text-white">{profile.gender}</p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-slate-400">Date of Birth</label>
+                            <p className="text-md font-semibold text-white">{profile.dateOfBirth}</p>
+                        </div>
+                    </div>
+
+                    <h3 className="text-md font-semibold text-slate-300 !mt-6 border-t border-slate-700 pt-4">Biometrics</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-slate-400">Height</label>
+                            <p className="text-md font-semibold text-white">{profile.height} cm</p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-slate-400">Weight</label>
+                            <p className="text-md font-semibold text-white">{profile.weight} kg</p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-slate-400">Blood Type</label>
+                            <p className="text-md font-semibold text-white">{profile.bloodType}</p>
+                        </div>
+                    </div>
+                    
+                    <h3 className="text-md font-semibold text-slate-300 !mt-6 border-t border-slate-700 pt-4">Health Information</h3>
+                     <div>
+                        <label className="text-sm font-medium text-slate-400">Allergies</label>
+                        <p className="text-sm text-gray-300">{profile.allergies}</p>
+                    </div>
+                     <div>
+                        <label className="text-sm font-medium text-slate-400">Dietary Restrictions</label>
+                        <p className="text-sm text-gray-300">{profile.dietaryRestrictions}</p>
+                    </div>
+                     <div>
+                        <label className="text-sm font-medium text-slate-400">Current Medications</label>
+                        <p className="text-sm text-gray-300">{profile.medications}</p>
+                    </div>
+                     <div>
+                        <label className="text-sm font-medium text-slate-400">Doctor's Name</label>
+                        <p className="text-sm text-gray-300">{profile.doctorName}</p>
+                    </div>
                      <div>
                         <label className="text-sm font-medium text-slate-400">Lifestyle Notes</label>
                         <p className="text-sm text-gray-300">{profile.lifestyle}</p>
                     </div>
                      <div>
                         <label className="text-sm font-medium text-slate-400">Health Goals</label>
-                        {/* FIX: Map goals array to a string to be rendered. */}
                         <p className="text-sm text-gray-300">{profile.goals.map(g => g.text).join(', ')}</p>
                     </div>
-                    <button onClick={() => setIsEditing(true)} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Edit Profile</button>
+                    <button onClick={() => setIsEditing(true)} className="w-full !mt-6 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Edit Profile</button>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -117,15 +163,57 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSave }) => {
                         </select>
                     </div>
                     <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Gender</label>
+                        <select name="gender" value={editableProfile.gender} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Date of Birth</label>
+                        <input type="date" name="dateOfBirth" value={editableProfile.dateOfBirth} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-slate-400 block mb-1">Height (cm)</label>
+                            <input type="number" name="height" value={editableProfile.height} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-slate-400 block mb-1">Weight (kg)</label>
+                            <input type="number" name="weight" value={editableProfile.weight} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-slate-400 block mb-1">Blood Type</label>
+                            <input type="text" name="bloodType" value={editableProfile.bloodType} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Allergies</label>
+                        <textarea name="allergies" value={editableProfile.allergies} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={2}></textarea>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Dietary Restrictions</label>
+                        <textarea name="dietaryRestrictions" value={editableProfile.dietaryRestrictions} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={2}></textarea>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Current Medications</label>
+                        <textarea name="medications" value={editableProfile.medications} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={2}></textarea>
+                    </div>
+                     <div>
+                        <label className="text-sm font-medium text-slate-400 block mb-1">Doctor's Name</label>
+                        <input type="text" name="doctorName" value={editableProfile.doctorName} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" />
+                    </div>
+                    <div>
                         <label className="text-sm font-medium text-slate-400 block mb-1">Lifestyle Notes</label>
                         <textarea name="lifestyle" value={editableProfile.lifestyle} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={3}></textarea>
                     </div>
                      <div>
                         <label className="text-sm font-medium text-slate-400 block mb-1">Health Goals</label>
-                        {/* FIX: Textarea value must be a string. Join goals array into a newline-separated string. */}
                         <textarea name="goals" value={editableProfile.goals.map(g => g.text).join('\n')} onChange={handleInputChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-2 text-white focus:ring-cyan-500 focus:border-cyan-500" rows={3}></textarea>
                     </div>
                     <button onClick={handleSave} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Save Changes</button>
+                    <button onClick={() => setIsEditing(false)} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">Cancel</button>
                 </div>
             )}
         </Card>
