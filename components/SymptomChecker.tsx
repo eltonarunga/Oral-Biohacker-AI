@@ -8,20 +8,38 @@ interface SymptomCheckerProps {
 }
 
 const FormattedMessage: React.FC<{ text: string }> = ({ text }) => {
-    // Remove the suggestions block and then format the remaining text
+    // Remove the suggestions block before rendering
     const cleanText = text.replace(/\[SUGGESTIONS\][\s\S]*/, '');
-    
-    // Convert markdown-like syntax to HTML
-    const formattedHtml = cleanText
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
-        .replace(/\n\s*[\*\-]\s/g, '<br>• '); // List items
+
+    // Safely parse bold markdown (**) into <strong> tags
+    const parseLineContent = (line: string) => {
+        const parts = line.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+        return parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={index}>{part.slice(2, -2)}</strong>;
+            }
+            return part; // React will escape this string
+        });
+    };
 
     return (
-      <p 
-        className="text-slate-800 dark:text-slate-200 text-sm" 
-        style={{ whiteSpace: 'pre-wrap' }} 
-        dangerouslySetInnerHTML={{ __html: formattedHtml }}
-      />
+        <div className="text-slate-800 dark:text-slate-200 text-sm">
+            {cleanText.split('\n').map((line, index) => {
+                // Check for markdown list items (* or -)
+                const listItemMatch = line.match(/^\s*[\*\-]\s(.*)/);
+                if (listItemMatch) {
+                    return (
+                        <div key={index} className="flex items-start">
+                            <span className="mr-2">•</span>
+                            <span>{parseLineContent(listItemMatch[1])}</span>
+                        </div>
+                    );
+                }
+                // Use a div with a min-height for empty lines to simulate <br> or pre-wrap behavior
+                // This preserves paragraph spacing from the AI's response
+                return <div key={index} className={line.trim() === '' ? 'min-h-[1em]' : ''}>{parseLineContent(line)}</div>;
+            })}
+        </div>
     );
 };
 
