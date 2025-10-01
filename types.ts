@@ -11,6 +11,7 @@ export interface Goal {
 export interface UserProfile {
   id: string;
   name: string;
+  authProviderId?: string; // e.g., 'google-12345'
   salivaPH: number;
   geneticRisk: 'Low' | 'Medium' | 'High';
   bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';

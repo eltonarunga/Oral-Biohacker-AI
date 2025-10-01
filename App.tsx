@@ -1,9 +1,6 @@
-
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
-import { mockProfiles } from './data/mockProfiles';
 import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, Goal } from './types';
 import PersonalizedPlanComponent from './components/PersonalizedPlan';
 import SymptomChecker from './components/SymptomChecker';
@@ -16,7 +13,32 @@ import UserProfilePage from './components/UserProfilePage';
 import HabitHistory from './components/HabitHistory';
 import { getDateString } from './utils/habits';
 import { Spinner } from './components/common/Spinner';
+import OnboardingWizard from './components/OnboardingWizard';
 
+// --- LocalStorage Database Helpers ---
+const USERS_DB_KEY = 'oralBioAI_usersDB';
+const PROFILES_DATA_DB_KEY = 'oralBioAI_profilesDataDB';
+const CURRENT_USER_ID_KEY = 'oralBioAI_currentUserId';
+
+const getUsersDB = (): Record<string, UserProfile> => {
+    const data = localStorage.getItem(USERS_DB_KEY);
+    return data ? JSON.parse(data) : {};
+};
+
+const saveUsersDB = (db: Record<string, UserProfile>) => {
+    localStorage.setItem(USERS_DB_KEY, JSON.stringify(db));
+};
+
+const getProfilesDataDB = (): Record<string, ProfileData> => {
+    const data = localStorage.getItem(PROFILES_DATA_DB_KEY);
+    return data ? JSON.parse(data) : {};
+};
+
+const saveProfilesDataDB = (db: Record<string, ProfileData>) => {
+    localStorage.setItem(PROFILES_DATA_DB_KEY, JSON.stringify(db));
+};
+
+// --- Guest & Initial Data ---
 const guestProfile: UserProfile = {
   id: 'guest',
   name: 'Guest',
@@ -110,7 +132,6 @@ const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void;
             {navItems.map((item, index) => (
                  <BottomNavItem 
                     key={item.page}
-                    // Fix: The ref callback should not return a value. Wrapped in curly braces to ensure it returns void.
                     ref={el => { itemRefs.current[index] = el }}
                     label={item.label} 
                     icon={item.icon} 
@@ -122,21 +143,12 @@ const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void;
     );
 };
 
-
 export const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [page, setPage] = useState<Page>('dashboard');
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
-  
-  const [activeProfileId, setActiveProfileId] = useState<string>('');
-
-  const [profilesData, setProfilesData] = useState<Record<string, ProfileData>>(() => {
-    const savedData = localStorage.getItem('profilesData');
-    return savedData ? JSON.parse(savedData) : {};
-  });
-
+  const [profilesData, setProfilesData] = useState<Record<string, ProfileData>>(getProfilesDataDB());
+  const [isOnboarding, setIsOnboarding] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark' || savedTheme === 'light') {
@@ -160,19 +172,35 @@ export const App: React.FC = () => {
   };
   
   useEffect(() => {
-    // Auto-login if previously authenticated
-    const wasAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (wasAuthenticated) {
-        handleLogin(localStorage.getItem('isGuest') === 'true', true);
-    } else {
-        setIsLoading(false);
+    const currentUserId = localStorage.getItem(CURRENT_USER_ID_KEY);
+    if (currentUserId) {
+        if (currentUserId === 'guest') {
+            setCurrentUser(guestProfile);
+        } else {
+            const usersDB = getUsersDB();
+            const user = usersDB[currentUserId];
+            if (user) {
+                // This handles cases where a user might have been created before the onboarding flow existed.
+                if (!user.salivaPH || !user.geneticRisk) {
+                    setCurrentUser(user);
+                    setIsOnboarding(true);
+                } else {
+                    setCurrentUser(user);
+                }
+            }
+        }
     }
+    setIsLoading(false);
   }, []);
 
+  useEffect(() => {
+    saveProfilesDataDB(profilesData);
+  }, [profilesData]);
+
   const getActiveProfileData = (): ProfileData => {
-    if (!activeProfileId) return {} as ProfileData;
+    if (!currentUser) return {} as ProfileData;
     const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false, suggestedReplies: [] };
-    const data: Partial<ProfileData> = profilesData[activeProfileId] ?? {};
+    const data: Partial<ProfileData> = profilesData[currentUser.id] ?? {};
 
     return {
       plan: data.plan ?? null,
@@ -185,26 +213,19 @@ export const App: React.FC = () => {
   };
 
   const updateActiveProfileData = (data: Partial<ProfileData>) => {
-    if (!activeProfileId) return;
+    if (!currentUser) return;
     setProfilesData(prev => ({
       ...prev,
-      [activeProfileId]: {
+      [currentUser.id]: {
         ...getActiveProfileData(),
         ...data
       }
     }));
   };
 
-  const activeProfile = profiles.find(p => p.id === activeProfileId);
+  const activeProfile = currentUser;
   const activeProfileData = getActiveProfileData();
   
-  useEffect(() => {
-    if (activeProfileId) {
-        localStorage.setItem('activeProfileId', activeProfileId);
-    }
-    localStorage.setItem('profilesData', JSON.stringify(profilesData));
-  }, [activeProfileId, profilesData]);
-
   const handleGeneratePlan = useCallback(async () => {
     if (!activeProfile) return;
     updateActiveProfileData({ isPlanLoading: true, planError: null });
@@ -220,7 +241,7 @@ export const App: React.FC = () => {
   }, [activeProfile]);
 
   const handleToggleHabit = (habitId: string) => {
-    if (!activeProfileId) return;
+    if (!currentUser) return;
 
     const currentData = getActiveProfileData();
     const today = getDateString(new Date());
@@ -229,57 +250,107 @@ export const App: React.FC = () => {
     const habitIndex = todaysCompletions.indexOf(habitId);
 
     if (habitIndex > -1) {
-        // If habit exists, remove it (uncheck)
         todaysCompletions.splice(habitIndex, 1);
     } else {
-        // If habit doesn't exist, add it (check)
         todaysCompletions.push(habitId);
     }
 
     if (todaysCompletions.length > 0) {
         newHistory[today] = todaysCompletions;
     } else {
-        // Clean up empty entries in history for the day
         delete newHistory[today];
     }
 
     updateActiveProfileData({ habitHistory: newHistory });
   };
 
+  const handleLogin = (method: 'google' | 'guest') => {
+    setIsLoading(true);
 
-  const handleLogin = (asGuest: boolean, isAutoLogin = false) => {
-    if (!isAutoLogin) setIsLoading(true);
-
-    if (asGuest) {
-      setProfiles([guestProfile]);
-      setActiveProfileId(guestProfile.id);
-      setIsGuest(true);
-      localStorage.setItem('isGuest', 'true');
-    } else {
-      setProfiles(mockProfiles);
-      const lastActiveId = localStorage.getItem('activeProfileId');
-      setActiveProfileId(lastActiveId && lastActiveId !== 'guest' ? lastActiveId : mockProfiles[0].id);
-      setIsGuest(false);
-      localStorage.setItem('isGuest', 'false');
-    }
-    setIsAuthenticated(true);
-    setPage('dashboard');
-    localStorage.setItem('isAuthenticated', 'true');
-
-    if (!isAutoLogin) {
+    if (method === 'guest') {
+        setCurrentUser(guestProfile);
+        setPage('dashboard');
+        localStorage.setItem(CURRENT_USER_ID_KEY, guestProfile.id);
+        setIsOnboarding(false);
         setTimeout(() => setIsLoading(false), 500);
-    } else {
-        setIsLoading(false);
+        return;
     }
+
+    // 'google'
+    const mockGoogleUser = {
+        id: 'google-123456789',
+        name: 'Charlie Brown',
+        email: 'charlie.brown@example.com',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop',
+    };
+    
+    const usersDB = getUsersDB();
+    const existingUser = Object.values(usersDB).find(u => u.authProviderId === mockGoogleUser.id);
+
+    if (existingUser) {
+        // Existing user logs in directly
+        setCurrentUser(existingUser);
+        localStorage.setItem(CURRENT_USER_ID_KEY, existingUser.id);
+        setIsOnboarding(false);
+        setPage('dashboard');
+    } else {
+        // New user starts onboarding
+        const partialNewUser: UserProfile = {
+            id: `user-${Date.now()}`,
+            authProviderId: mockGoogleUser.id,
+            name: mockGoogleUser.name,
+            email: mockGoogleUser.email,
+            avatarUrl: mockGoogleUser.avatarUrl,
+            joinDate: new Date().getFullYear().toString(),
+            // Leave biometrics and goals to be filled in during onboarding
+            salivaPH: 0, // temporary
+            geneticRisk: 'Low', // temporary
+            bruxism: 'None', // temporary
+            lifestyle: 'New user, just getting started!',
+            goals: [],
+            bio: 'Exploring oral biohacking.',
+            phone: 'N/A',
+            gender: 'Other',
+            dateOfBirth: 'N/A',
+            height: 0,
+            weight: 0,
+            bloodType: 'N/A',
+            dietaryRestrictions: 'N/A',
+            allergies: 'N/A',
+            medications: 'N/A',
+            doctorName: 'N/A',
+        };
+        setCurrentUser(partialNewUser);
+        setIsOnboarding(true);
+    }
+    
+    setTimeout(() => setIsLoading(false), 500);
   };
 
+    const handleCompleteOnboarding = (updatedProfileData: Partial<UserProfile>) => {
+        if (!currentUser) return;
+
+        const completeProfile: UserProfile = {
+            ...currentUser,
+            ...updatedProfileData,
+        };
+        
+        // Save the now-complete profile to the database
+        const usersDB = getUsersDB();
+        usersDB[completeProfile.id] = completeProfile;
+        saveUsersDB(usersDB);
+
+        // Update state and log the user in
+        setCurrentUser(completeProfile);
+        localStorage.setItem(CURRENT_USER_ID_KEY, completeProfile.id);
+        setIsOnboarding(false);
+        setPage('dashboard');
+    };
+
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setIsGuest(false);
-    setActiveProfileId('');
-    setProfiles([]);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('isGuest');
+    setCurrentUser(null);
+    setIsOnboarding(false);
+    localStorage.removeItem(CURRENT_USER_ID_KEY);
   };
   
   const handleNavigate = (page: Page) => {
@@ -287,29 +358,63 @@ export const App: React.FC = () => {
   };
 
   const handleUpdateProfile = (updatedProfile: UserProfile) => {
-    setProfiles(prevProfiles =>
-      prevProfiles.map(p => (p.id === updatedProfile.id ? updatedProfile : p))
-    );
+    if (!currentUser) return;
+
+    setCurrentUser(updatedProfile);
+    if (updatedProfile.id !== 'guest') {
+        const usersDB = getUsersDB();
+        usersDB[updatedProfile.id] = updatedProfile;
+        saveUsersDB(usersDB);
+    }
   };
+
+  const handleExportData = () => {
+    if (!currentUser) return;
+    
+    const userData = {
+        profile: currentUser,
+        data: getActiveProfileData(),
+    };
+    
+    const dataStr = JSON.stringify(userData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `oralBioAI_data_${currentUser.id}_${getDateString(new Date())}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteAccount = () => {
+    if (!currentUser || currentUser.id === 'guest') return;
+
+    const usersDB = getUsersDB();
+    delete usersDB[currentUser.id];
+    saveUsersDB(usersDB);
+
+    const profilesDataDB = getProfilesDataDB();
+    delete profilesDataDB[currentUser.id];
+    saveProfilesDataDB(profilesDataDB);
+
+    handleLogout();
+  };
+  
+  const isAuthenticated = !!currentUser;
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen bg-slate-900"><Spinner /></div>;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !activeProfile) {
     return <Login onLogin={handleLogin} />;
   }
   
-  if (!activeProfile) {
-    // This case should ideally not be reached if logic is correct, but as a fallback:
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 text-center">
-        <p className="mb-4">Could not load user profile. The stored profile might be corrupted or missing.</p>
-        <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-          Log Out and Start Over
-        </button>
-      </div>
-    );
+  if (isOnboarding) {
+      return <OnboardingWizard user={activeProfile} onComplete={handleCompleteOnboarding} />;
   }
 
   const renderPage = () => {
@@ -333,6 +438,8 @@ export const App: React.FC = () => {
                   onUpdateProfile={handleUpdateProfile} 
                   theme={theme}
                   onToggleTheme={handleToggleTheme}
+                  onExportData={handleExportData}
+                  onDeleteAccount={handleDeleteAccount}
                 />;
       case 'habit-history':
         return <HabitHistory

@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { UserProfile, Goal } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
 
@@ -9,6 +9,8 @@ interface UserProfilePageProps {
   onUpdateProfile: (profile: UserProfile) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  onExportData: () => void;
+  onDeleteAccount: () => void;
 }
 
 
@@ -101,13 +103,45 @@ const GoalItem: React.FC<{ goal: Goal, onToggle: (id: string) => void, onDelete:
 );
 
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile, theme, onToggleTheme }) => {
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile, theme, onToggleTheme, onExportData, onDeleteAccount }) => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleAvatarUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            console.error('Please select an image file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (typeof e.target?.result === 'string') {
+                onUpdateProfile({ ...profile, avatarUrl: e.target.result });
+            }
+        };
+        reader.onerror = () => {
+            console.error("Failed to read the image file.");
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleAvatarSelect = (url: string) => {
         onUpdateProfile({ ...profile, avatarUrl: url });
         setIsAvatarModalOpen(false);
+    };
+    
+    const handleDeleteAccount = () => {
+        if (window.confirm("Are you sure you want to delete your account? This will permanently erase all your data from this device. This action cannot be undone.")) {
+            onDeleteAccount();
+        }
     };
 
     return (
@@ -118,14 +152,18 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                     <div className="flex gap-4 flex-col items-center">
                         <div className="relative">
                             <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover" />
-                            <button onClick={() => setIsAvatarModalOpen(true)} className="absolute bottom-1 right-1 bg-blue-600 text-white rounded-full p-1.5 shadow-md hover:bg-blue-700 transition-colors">
-                                <span className="material-symbols-outlined text-base"> edit </span>
+                            <button onClick={handleAvatarUploadClick} className="absolute bottom-1 right-1 bg-blue-600 text-white rounded-full p-1.5 shadow-md hover:bg-blue-700 transition-colors" aria-label="Upload new avatar">
+                                <span className="material-symbols-outlined text-base"> add_a_photo </span>
                             </button>
+                            <input type="file" accept="image/png, image/jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" />
                         </div>
                         <div className="flex flex-col items-center justify-center">
                             <p className="text-gray-900 dark:text-gray-50 text-2xl font-bold leading-tight tracking-[-0.015em] text-center">{profile.name}</p>
                             <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal text-center">{profile.bio}</p>
                             <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal text-center">Joined {profile.joinDate}</p>
+                             <button onClick={() => setIsAvatarModalOpen(true)} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline mt-2">
+                                Choose from gallery
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -172,6 +210,25 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                         <LinkRow icon="Question" label="Help & Support" noBorder/>
                     </div>
                 </div>
+                {/* Data & Privacy */}
+                {profile.id !== 'guest' && (
+                    <div>
+                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Data & Privacy</h3>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-3">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Your data is stored only on this device. You can export a copy or delete it permanently.</p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button onClick={onExportData} className="flex-1 text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-gray-200 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-xl">download</span>
+                                    Export My Data
+                                </button>
+                                <button onClick={handleDeleteAccount} className="flex-1 text-center py-2 px-3 bg-red-100 hover:bg-red-200 text-red-800 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-300 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-xl">delete_forever</span>
+                                    Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
             
             <AvatarSelectionModal
