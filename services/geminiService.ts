@@ -1,12 +1,26 @@
 import { GoogleGenAI, Type, Chat, Modality, GenerateContentResponse } from "@google/genai";
 import { UserProfile, PersonalizedPlan, Dentist, GroundingChunk, SmileDesignResult } from '../types';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable is not set");
-}
+// Check for API Key and export availability status
+export const isGeminiAvailable = !!process.env.API_KEY;
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Conditionally initialize the AI client
+const ai = isGeminiAvailable ? new GoogleGenAI({ apiKey: process.env.API_KEY! }) : null;
 const model = 'gemini-2.5-flash';
+
+const checkAvailability = () => {
+    if (!isGeminiAvailable || !ai) {
+        throw new Error("AI features are not configured. Please provide a Google Gemini API key.");
+    }
+};
+
+const handleApiError = (error: unknown, context: string) => {
+    console.error(`Error ${context}:`, error);
+    if (error instanceof Error && error.message.includes("API key not valid")) {
+        throw new Error("The provided Google Gemini API key is not valid.");
+    }
+    throw new Error(`Failed to communicate with the AI model for ${context}.`);
+};
 
 const planSchema = {
     type: Type.OBJECT,
@@ -85,6 +99,7 @@ const getAge = (dateString: string): number | string => {
 };
 
 export const generatePersonalizedPlan = async (profile: UserProfile): Promise<PersonalizedPlan> => {
+    checkAvailability();
     const goalsText = profile.goals.length > 0
         ? profile.goals.map(g => `- ${g.text}${g.isCompleted ? ' (Completed)' : ''}`).join('\n')
         : 'No specific goals listed.';
@@ -120,7 +135,7 @@ export const generatePersonalizedPlan = async (profile: UserProfile): Promise<Pe
     `;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai!.models.generateContent({
             model: model,
             contents: prompt,
             config: {
@@ -133,13 +148,14 @@ export const generatePersonalizedPlan = async (profile: UserProfile): Promise<Pe
         const plan = JSON.parse(jsonText);
         return plan;
     } catch (error) {
-        console.error("Error generating personalized plan:", error);
-        throw new Error("Failed to communicate with the AI model.");
+        handleApiError(error, 'plan generation');
+        throw error; // Should be unreachable due to handleApiError throwing, but keeps typescript happy
     }
 };
 
 export const createSymptomCheckerChat = (): Chat => {
-    return ai.chats.create({
+    checkAvailability();
+    return ai!.chats.create({
         model,
         config: {
             tools: [{ googleSearch: {} }],
@@ -179,6 +195,7 @@ export interface DentistSearchResult {
 }
 
 export const findDentistsNearMe = async (latitude: number, longitude: number): Promise<DentistSearchResult> => {
+    checkAvailability();
     const prompt = `
         Find a list of 5 dentists near the location with latitude ${latitude} and longitude ${longitude}.
         For each dentist, provide their name, address, and phone number.
@@ -193,7 +210,7 @@ export const findDentistsNearMe = async (latitude: number, longitude: number): P
     `;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai!.models.generateContent({
             model: model,
             contents: prompt,
             config: {
@@ -219,16 +236,17 @@ export const findDentistsNearMe = async (latitude: number, longitude: number): P
         return { dentists, sources };
 
     } catch (error) {
-        console.error("Error finding dentists:", error);
-        throw new Error("Failed to communicate with the AI model for finding dentists.");
+        handleApiError(error, 'finding dentists');
+        throw error;
     }
 };
 
 export const designPerfectSmile = async (base64ImageData: string, mimeType: string): Promise<SmileDesignResult> => {
+    checkAvailability();
     const prompt = `Analyze the smile in this photo. Generate a new image that shows an ideal, aesthetically perfect version of this smile. The teeth should be perfectly aligned, well-proportioned, and a natural shade of white. The gums should look healthy. The overall result should be a beautiful, harmonious, and realistic smile.`;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await ai!.models.generateContent({
             model: 'gemini-2.5-flash-image-preview',
             contents: {
                 parts: [
@@ -265,7 +283,7 @@ export const designPerfectSmile = async (base64ImageData: string, mimeType: stri
         return result;
 
     } catch (error) {
-        console.error("Error designing perfect smile:", error);
-        throw new Error("Failed to communicate with the AI model for smile design.");
+        handleApiError(error, 'smile design');
+        throw error;
     }
 };

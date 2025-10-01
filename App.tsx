@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
-import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit } from './types';
+import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, GoogleCredentialResponse } from './types';
 import PersonalizedPlanComponent from './components/PersonalizedPlan';
 import SymptomChecker from './components/SymptomChecker';
 import EducationalContent from './components/EducationalContent';
@@ -307,28 +307,30 @@ const useAuth = () => {
     initializeAuth();
   }, []);
 
-  const login = useCallback((method: 'google' | 'guest') => {
+  const handleGuestLogin = useCallback(() => {
+    setIsLoading(true);
+    setCurrentUser(GUEST_PROFILE);
+    StorageService.setCurrentUserId(GUEST_PROFILE.id);
+    setIsOnboarding(false);
+    setTimeout(() => setIsLoading(false), 500);
+  }, []);
+
+  const handleGoogleLogin = useCallback((response: GoogleCredentialResponse) => {
     setIsLoading(true);
 
-    if (method === 'guest') {
-      setCurrentUser(GUEST_PROFILE);
-      StorageService.setCurrentUserId(GUEST_PROFILE.id);
-      setIsOnboarding(false);
-      setTimeout(() => setIsLoading(false), 500);
+    if (!response.credential) {
+      console.error("Google login failed: No credential returned.");
+      setIsLoading(false);
       return;
     }
 
-    // Mock Google login
-    const mockGoogleUser = {
-      id: 'google-123456789',
-      name: 'Charlie Brown',
-      email: 'charlie.brown@example.com',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop',
-    };
+    // Decode the JWT to get user info (Note: in a real app, you'd verify this on a server)
+    const jwtPayload = JSON.parse(atob(response.credential.split('.')[1]));
+    const { sub: googleId, name, email, picture: avatarUrl } = jwtPayload;
 
     const usersDB = StorageService.getUsersDB();
     const existingUser = Object.values(usersDB).find(
-      u => u.authProviderId === mockGoogleUser.id
+      u => u.authProviderId === googleId
     );
 
     if (existingUser) {
@@ -338,10 +340,10 @@ const useAuth = () => {
     } else {
       const partialNewUser: UserProfile = {
         id: `user-${Date.now()}`,
-        authProviderId: mockGoogleUser.id,
-        name: mockGoogleUser.name,
-        email: mockGoogleUser.email,
-        avatarUrl: mockGoogleUser.avatarUrl,
+        authProviderId: googleId,
+        name: name,
+        email: email,
+        avatarUrl: avatarUrl,
         joinDate: new Date().getFullYear().toString(),
         salivaPH: 0,
         geneticRisk: 'Low',
@@ -366,6 +368,62 @@ const useAuth = () => {
 
     setTimeout(() => setIsLoading(false), 500);
   }, []);
+
+  const handleEmailSignUp = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const usersDB = StorageService.getUsersDB();
+    const existingUser = Object.values(usersDB).find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+        return { success: false, error: 'An account with this email already exists.' };
+    }
+
+    const newUser: UserProfile = {
+        id: `user-${Date.now()}`,
+        name: email.split('@')[0],
+        email: email,
+        password: password,
+        joinDate: new Date().getFullYear().toString(),
+        salivaPH: 0,
+        geneticRisk: 'Low',
+        bruxism: 'None',
+        lifestyle: 'New user, just getting started!',
+        goals: [],
+        avatarUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=100&auto=format&fit=crop', // A generic avatar
+        bio: 'Exploring oral biohacking.',
+        phone: 'N/A',
+        gender: 'Other',
+        dateOfBirth: 'N/A',
+        height: 0,
+        weight: 0,
+        bloodType: 'N/A',
+        dietaryRestrictions: 'N/A',
+        allergies: 'N/A',
+        medications: 'N/A',
+        doctorName: 'N/A',
+    };
+    
+    setCurrentUser(newUser);
+    setIsOnboarding(true);
+    return { success: true };
+}, []);
+
+const handleEmailSignIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const usersDB = StorageService.getUsersDB();
+    const user = Object.values(usersDB).find(u => u.email.toLowerCase() === email.toLowerCase() && !u.authProviderId);
+
+    if (user) {
+        if (user.password === password) {
+            setCurrentUser(user);
+            StorageService.setCurrentUserId(user.id);
+            setIsOnboarding(false);
+            return { success: true };
+        } else {
+            return { success: false, error: 'Incorrect password.' };
+        }
+    } else {
+        return { success: false, error: 'No account found with that email, or it was created with Google Sign-In.' };
+    }
+}, []);
+
 
   const logout = useCallback(() => {
     setCurrentUser(null);
@@ -396,7 +454,10 @@ const useAuth = () => {
     isLoading,
     currentUser,
     isOnboarding,
-    login,
+    handleGuestLogin,
+    handleGoogleLogin,
+    handleEmailSignUp,
+    handleEmailSignIn,
     logout,
     completeOnboarding,
   };
@@ -441,7 +502,17 @@ const useProfileData = (currentUser: UserProfile | null) => {
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { isLoading, currentUser, isOnboarding, login, logout, completeOnboarding } = useAuth();
+  const { 
+    isLoading, 
+    currentUser, 
+    isOnboarding, 
+    handleGuestLogin, 
+    handleGoogleLogin, 
+    handleEmailSignUp,
+    handleEmailSignIn,
+    logout, 
+    completeOnboarding 
+  } = useAuth();
   const { activeProfileData, updateActiveProfileData } = useProfileData(currentUser);
   
   const [page, setPage] = useState<Page>('dashboard');
@@ -647,7 +718,13 @@ export const App: React.FC = () => {
 
   // Unauthenticated state
   if (!currentUser) {
-    return <Login onLogin={login} />;
+    return <Login 
+        onGoogleLogin={handleGoogleLogin} 
+        onGuestLogin={handleGuestLogin} 
+        onEmailSignUp={handleEmailSignUp}
+        onEmailSignIn={handleEmailSignIn}
+        theme={theme} 
+    />;
   }
 
   // Onboarding state

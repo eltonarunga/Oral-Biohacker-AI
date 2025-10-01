@@ -12,6 +12,7 @@ export interface UserProfile {
   id: string;
   name: string;
   authProviderId?: string; // e.g., 'google-12345'
+  password?: string; // For email/password auth
   salivaPH: number;
   geneticRisk: 'Low' | 'Medium' | 'High';
   bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';
@@ -88,4 +89,9 @@ export interface Habit {
   time: 'Morning' | 'Evening';
   icon: string; // Material Symbols icon name
   category: 'Clinically Proven' | 'Biohacking';
+}
+
+// Represents the object returned by the Google Sign-In callback
+export interface GoogleCredentialResponse {
+  credential?: string;
 }

@@ -96,14 +96,22 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
 
     useEffect(() => {
         const initChat = () => {
-            const newChat = createSymptomCheckerChat();
-            const initialMessage: ChatMessage = { role: 'model', text: "Hello! I'm your OralBio AI assistant. How are you feeling today? Please describe any symptoms you're experiencing." };
-            setState({ chat: newChat, history: [initialMessage], isLoading: false, suggestedReplies: ["I have a toothache", "My gums are bleeding", "I have bad breath"] });
+            if (state.chat) return; // Already initialized or in an error state from a previous attempt
+            try {
+                const newChat = createSymptomCheckerChat();
+                const initialMessage: ChatMessage = { role: 'model', text: "Hello! I'm your OralBio AI assistant. How are you feeling today? Please describe any symptoms you're experiencing." };
+                setState({ chat: newChat, history: [initialMessage], isLoading: false, suggestedReplies: ["I have a toothache", "My gums are bleeding", "I have bad breath"] });
+            } catch (error) {
+                const errorMessage: ChatMessage = { role: 'model', text: error instanceof Error ? error.message : 'Could not initialize the AI symptom checker.' };
+                setState(prev => ({ ...prev, chat: null, history: [errorMessage], isLoading: false, suggestedReplies: [] }));
+            }
         };
-        if (!state.chat) {
+        
+        // This check ensures we only try to init once if the history is empty
+        if (state.history.length === 0) {
             initChat();
         }
-    }, [state.chat, setState]);
+    }, [state.chat, state.history.length, setState]);
 
     const handleSendMessage = async (messageText: string) => {
         if (!messageText.trim() || !state.chat || state.isLoading) return;
@@ -188,7 +196,7 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                          <button 
                             key={index}
                             onClick={() => handleSendMessage(reply)}
-                            disabled={state.isLoading}
+                            disabled={state.isLoading || !state.chat}
                             className="rounded-full border border-blue-500/50 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {reply}
                          </button>
@@ -200,12 +208,12 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                 <form onSubmit={handleFormSubmit} className="relative">
                     <input
                         className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-full text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-cyan-500 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 h-14 placeholder:text-slate-500 dark:placeholder:text-slate-400 p-4 pr-12 text-base font-normal leading-normal"
-                        placeholder="Type your message..."
+                        placeholder={!state.chat ? "Symptom checker is unavailable." : "Type your message..."}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        disabled={state.isLoading}
+                        disabled={state.isLoading || !state.chat}
                     />
-                    <button type="submit" disabled={state.isLoading || !input.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="submit" disabled={state.isLoading || !input.trim() || !state.chat} className="absolute right-2 top-1/2 -translate-y-1/2 flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <span className="material-symbols-outlined text-2xl">arrow_upward</span>
                     </button>
                 </form>
