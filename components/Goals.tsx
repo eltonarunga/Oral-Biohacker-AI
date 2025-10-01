@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Goal, Page } from '../types';
 
@@ -13,7 +14,7 @@ const Goals: React.FC<GoalsProps> = ({ goals, onNavigate }) => {
     const activeGoals = goals.filter(g => !g.isCompleted);
 
     return (
-        <div className="px-4 pt-4 pb-1">
+        <div>
             <h2 className="text-gray-900 dark:text-gray-50 text-xl font-bold leading-tight tracking-[-0.015em] mb-3">Your Health Goals</h2>
             <div className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm p-4 space-y-4">
                 {/* Progress Section */}

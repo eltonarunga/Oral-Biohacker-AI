@@ -47,7 +47,7 @@ const GoalManager: React.FC<{ profile: UserProfile, onUpdateProfile: (profile: U
 
     return (
         <div>
-            <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Goals</h3>
+            <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Health Goals</h3>
             <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-4">
                 <form onSubmit={handleAddGoal} className="flex gap-2">
                     <input
@@ -138,7 +138,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
         setIsAvatarModalOpen(false);
     };
     
-    const handleDeleteAccount = () => {
+    const handleDeleteAccountConfirmed = () => {
         if (window.confirm("Are you sure you want to delete your account? This will permanently erase all your data from this device. This action cannot be undone.")) {
             onDeleteAccount();
         }
@@ -146,14 +146,17 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
 
     return (
         <>
-            <div className="p-4 space-y-6">
-                {/* Profile Header */}
-                <div className="flex w-full flex-col gap-4 items-center">
-                    <div className="flex gap-4 flex-col items-center">
+            <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column */}
+                <div className="lg:col-span-1 space-y-6">
+                    {/* Profile Header */}
+                     <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-6 flex w-full flex-col gap-4 items-center">
                         <div className="relative">
-                            <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover" />
-                            <button onClick={handleAvatarUploadClick} className="absolute bottom-1 right-1 bg-blue-600 text-white rounded-full p-1.5 shadow-md hover:bg-blue-700 transition-colors" aria-label="Upload new avatar">
-                                <span className="material-symbols-outlined text-base"> add_a_photo </span>
+                            <button onClick={handleAvatarUploadClick} className="group rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500" aria-label="Change profile photo">
+                                <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover transition-opacity group-hover:opacity-60" />
+                                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    <span className="material-symbols-outlined text-4xl">add_a_photo</span>
+                                </div>
                             </button>
                             <input type="file" accept="image/png, image/jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" aria-hidden="true" />
                         </div>
@@ -166,69 +169,71 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                             </button>
                         </div>
                     </div>
+                    <GoalManager profile={profile} onUpdateProfile={onUpdateProfile} />
                 </div>
-
-                <GoalManager profile={profile} onUpdateProfile={onUpdateProfile} />
-
-                {/* Personal Information */}
-                <div>
-                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Personal Information</h3>
-                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-                        <InfoRow icon="Envelope" label="Email" value={profile.email} />
-                        <InfoRow icon="Phone" label="Phone" value={profile.phone} />
-                        <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
-                        <InfoRow icon="Calendar" label="Date of Birth" value={profile.dateOfBirth} noBorder />
-                    </div>
-                </div>
-                {/* Biometric Data */}
-                <div>
-                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Biometric Data</h3>
-                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-                        <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
-                        <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
-                        <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
-                    </div>
-                </div>
-                {/* Health Details */}
-                <div>
-                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Health Details</h3>
-                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-                        <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
-                        <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
-                        <InfoRow icon="Pill" label="Medications" value={profile.medications} />
-                        <InfoRow icon="Stethoscope" label="Doctor's Name" value={profile.doctorName} noBorder />
-                    </div>
-                </div>
-                {/* App Settings */}
-                <div>
-                    <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">App Settings</h3>
-                    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
-                        <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
-                        <ToggleRow icon="dark_mode" label="Dark Mode" enabled={theme === 'dark'} onToggle={onToggleTheme} isMaterialIcon />
-                        <LinkRow icon="ShieldCheck" label="Privacy Settings" />
-                        <LinkRow icon="FileText" label="Terms of Service" />
-                        <LinkRow icon="Question" label="Help & Support" noBorder/>
-                    </div>
-                </div>
-                {/* Data & Privacy */}
-                {profile.id !== 'guest' && (
+                
+                {/* Right Column */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Personal Information */}
                     <div>
-                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] px-0 pb-3 pt-2">Data & Privacy</h3>
-                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-3">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Your data is stored only on this device. You can export a copy or delete it permanently.</p>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button onClick={onExportData} className="flex-1 text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-gray-200 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                                    <span className="material-symbols-outlined text-xl">download</span>
-                                    Export My Data
-                                </button>
-                                <button onClick={handleDeleteAccount} className="flex-1 text-center py-2 px-3 bg-red-100 hover:bg-red-200 text-red-800 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-300 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                                    <span className="material-symbols-outlined text-xl">delete_forever</span>
-                                    Delete Account
-                                </button>
-                            </div>
+                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Personal Information</h3>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                            <InfoRow icon="Envelope" label="Email" value={profile.email} />
+                            <InfoRow icon="Phone" label="Phone" value={profile.phone} />
+                            <InfoRow icon="GenderFemale" label="Gender" value={profile.gender} />
+                            <InfoRow icon="Calendar" label="Date of Birth" value={profile.dateOfBirth} noBorder />
                         </div>
                     </div>
-                )}
+                    {/* Biometric Data */}
+                    <div>
+                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Biometric Data</h3>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                            <InfoRow icon="Ruler" label="Height" value={`${profile.height} cm`} />
+                            <InfoRow icon="Barbell" label="Weight" value={`${profile.weight} kg`} />
+                            <InfoRow icon="Drop" label="Blood Type" value={profile.bloodType} noBorder />
+                        </div>
+                    </div>
+                    {/* Health Details */}
+                    <div>
+                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Health Details</h3>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                            <InfoRow icon="Leaf" label="Dietary Restrictions" value={profile.dietaryRestrictions} />
+                            <InfoRow icon="Prohibit" label="Allergies" value={profile.allergies} />
+                            <InfoRow icon="Pill" label="Medications" value={profile.medications} />
+                            <InfoRow icon="Stethoscope" label="Doctor's Name" value={profile.doctorName} noBorder />
+                        </div>
+                    </div>
+                    {/* App Settings */}
+                    <div>
+                        <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">App Settings</h3>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                            <ToggleRow icon="Bell" label="Notifications" enabled={notificationsEnabled} onToggle={setNotificationsEnabled} />
+                            <ToggleRow icon="dark_mode" label="Dark Mode" enabled={theme === 'dark'} onToggle={onToggleTheme} isMaterialIcon />
+                            <LinkRow icon="ShieldCheck" label="Privacy Settings" />
+                            <LinkRow icon="FileText" label="Terms of Service" />
+                            <LinkRow icon="Question" label="Help & Support" noBorder/>
+                        </div>
+                    </div>
+                    {/* Data & Privacy */}
+                    {profile.id !== 'guest' && (
+                        <div>
+                            <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Data & Privacy</h3>
+                            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-3">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Your data is stored only on this device. You can export a copy or delete it permanently.</p>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <button onClick={onExportData} className="flex-1 text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-gray-200 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                                        <span className="material-symbols-outlined text-xl">download</span>
+                                        Export My Data
+                                    </button>
+                                    <button onClick={handleDeleteAccountConfirmed} className="flex-1 text-center py-2 px-3 bg-red-100 hover:bg-red-200 text-red-800 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-300 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                                        <span className="material-symbols-outlined text-xl">delete_forever</span>
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
             
             <AvatarSelectionModal
@@ -261,11 +266,11 @@ const ICONS: { [key: string]: React.ReactNode } = {
 };
 
 const InfoRow = ({ icon, label, value, noBorder = false }: { icon: string, label: string, value: string, noBorder?: boolean }) => (
-    <div className={`flex items-center gap-4 px-4 py-3 ${!noBorder && 'border-b border-gray-200 dark:border-gray-700'}`}>
-        <div className="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 size-12">{ICONS[icon]}</div>
+    <div className={`flex items-start gap-4 px-4 py-3 ${!noBorder && 'border-b border-gray-200 dark:border-gray-700'}`}>
+        <div className="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 size-10 mt-1">{ICONS[icon]}</div>
         <div className="flex flex-col justify-center">
-            <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-1">{label}</p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">{value}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">{label}</p>
+            <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-2">{value || 'N/A'}</p>
         </div>
     </div>
 );

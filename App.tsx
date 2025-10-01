@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
-import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, Goal } from './types';
+import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit } from './types';
 import PersonalizedPlanComponent from './components/PersonalizedPlan';
 import SymptomChecker from './components/SymptomChecker';
 import EducationalContent from './components/EducationalContent';
@@ -14,32 +14,31 @@ import HabitHistory from './components/HabitHistory';
 import { getDateString } from './utils/habits';
 import { Spinner } from './components/common/Spinner';
 import OnboardingWizard from './components/OnboardingWizard';
+import { Sidebar } from './components/Sidebar';
 
-// --- LocalStorage Database Helpers ---
-const USERS_DB_KEY = 'oralBioAI_usersDB';
-const PROFILES_DATA_DB_KEY = 'oralBioAI_profilesDataDB';
-const CURRENT_USER_ID_KEY = 'oralBioAI_currentUserId';
+// ==================== CONSTANTS ====================
 
-const getUsersDB = (): Record<string, UserProfile> => {
-    const data = localStorage.getItem(USERS_DB_KEY);
-    return data ? JSON.parse(data) : {};
-};
+const STORAGE_KEYS = {
+  USERS_DB: 'oralBioAI_usersDB',
+  PROFILES_DATA_DB: 'oralBioAI_profilesDataDB',
+  CURRENT_USER_ID: 'oralBioAI_currentUserId',
+  THEME: 'theme',
+} as const;
 
-const saveUsersDB = (db: Record<string, UserProfile>) => {
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(db));
-};
+const INITIAL_HABITS: Habit[] = [
+  { id: 'h6', name: 'Flossing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  { id: 'h7', name: 'Brushing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  { id: 'h5', name: 'Mouthwash', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
+  { id: 'h1', name: 'Oil Pulling', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h2', name: 'Tongue Scraping', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h3', name: 'Probiotic Rinse', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h4', name: 'Vitamin D3/K2', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
+  { id: 'h8', name: 'Oral Probiotic', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+  { id: 'h9', name: 'Magnesium', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+  { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+];
 
-const getProfilesDataDB = (): Record<string, ProfileData> => {
-    const data = localStorage.getItem(PROFILES_DATA_DB_KEY);
-    return data ? JSON.parse(data) : {};
-};
-
-const saveProfilesDataDB = (db: Record<string, ProfileData>) => {
-    localStorage.setItem(PROFILES_DATA_DB_KEY, JSON.stringify(db));
-};
-
-// --- Guest & Initial Data ---
-const guestProfile: UserProfile = {
+const GUEST_PROFILE: UserProfile = {
   id: 'guest',
   name: 'Guest',
   salivaPH: 7.0,
@@ -66,320 +65,460 @@ const guestProfile: UserProfile = {
   doctorName: 'N/A',
 };
 
-const initialHabitsData: Habit[] = [
-  // Clinically Proven
-  { id: 'h6', name: 'Flossing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  { id: 'h7', name: 'Brushing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  { id: 'h5', name: 'Mouthwash', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  
-  // Biohacking
-  { id: 'h1', name: 'Oil Pulling', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h2', name: 'Tongue Scraping', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h3', name: 'Probiotic Rinse', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h4', name: 'Vitamin D3/K2', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h8', name: 'Oral Probiotic', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
-  { id: 'h9', name: 'Magnesium', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
-  { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
+export const NAV_ITEMS: ReadonlyArray<{ page: Page; label: string; icon: string }> = [
+  { page: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { page: 'plan', label: 'Plan', icon: 'list_alt' },
+  { page: 'symptom-checker', label: 'Checker', icon: 'stethoscope' },
+  { page: 'smile-design-studio', label: 'Smile Studio', icon: 'face_retouching_natural' },
+  { page: 'find-dentist', label: 'Find Dentist', icon: 'local_hospital' },
+  { page: 'education', label: 'Learn', icon: 'school' },
+  { page: 'profile', label: 'Profile', icon: 'person' },
 ];
 
-const navItems: { page: Page; label: string; icon: string }[] = [
-    { page: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { page: 'plan', label: 'Plan', icon: 'list_alt' },
-    { page: 'symptom-checker', label: 'Checker', icon: 'stethoscope' },
-    { page: 'smile-design-studio', label: 'Smile', icon: 'face_retouching_natural' },
-    { page: 'find-dentist', label: 'Dentist', icon: 'local_hospital' },
-    { page: 'education', label: 'Learn', icon: 'school' },
-    { page: 'profile', label: 'Profile', icon: 'person' },
-];
+const BOTTOM_NAV_PAGES: readonly Page[] = [
+  'dashboard',
+  'plan',
+  'symptom-checker',
+  'smile-design-studio',
+  'profile',
+] as const;
 
-const BottomNavItem = React.forwardRef<HTMLAnchorElement, {label: string, icon: string, isActive: boolean, onClick: () => void}>(({ label, icon, isActive, onClick }, ref) => {
-    const activeClasses = 'text-white';
-    const inactiveClasses = 'text-gray-500 dark:text-gray-400';
+// ==================== STORAGE SERVICE ====================
 
-    return (
-        <a ref={ref} onClick={onClick} className={`relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-1 cursor-pointer transition-colors duration-300 ${isActive ? activeClasses : inactiveClasses}`}>
-            <div className={`flex h-8 w-8 items-center justify-center`}>
-                <span className="material-symbols-outlined">{icon}</span>
-            </div>
-            <p className={`text-xs font-medium leading-normal tracking-[0.015em]`}>{label}</p>
-        </a>
-    );
-});
+class StorageService {
+  static getUsersDB(): Record<string, UserProfile> {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
+      return data ? JSON.parse(data) : {};
+    } catch (error) {
+      console.error('Error reading users database:', error);
+      return {};
+    }
+  }
 
-const BottomNav: React.FC<{ currentPage: Page; onNavigate: (page: Page) => void; }> = ({ currentPage, onNavigate }) => {
-    const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-    const [indicatorStyle, setIndicatorStyle] = useState({});
+  static saveUsersDB(db: Record<string, UserProfile>): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(db));
+    } catch (error) {
+      console.error('Error saving users database:', error);
+    }
+  }
 
-    useEffect(() => {
-        const activeIndex = navItems.findIndex(item => item.page === currentPage);
-        const activeItem = itemRefs.current[activeIndex];
+  static getProfilesDataDB(): Record<string, ProfileData> {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PROFILES_DATA_DB);
+      return data ? JSON.parse(data) : {};
+    } catch (error) {
+      console.error('Error reading profiles data:', error);
+      return {};
+    }
+  }
 
-        if (activeItem) {
-            setIndicatorStyle({
-                left: `${activeItem.offsetLeft}px`,
-                width: `${activeItem.offsetWidth}px`,
-            });
-        }
-    }, [currentPage]);
+  static saveProfilesDataDB(db: Record<string, ProfileData>): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PROFILES_DATA_DB, JSON.stringify(db));
+    } catch (error) {
+      console.error('Error saving profiles data:', error);
+    }
+  }
 
-    return (
-        <div className="relative flex gap-1 border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-2 pb-3 pt-2">
-            <div 
-                className="absolute top-0 bottom-0 my-auto h-[calc(100%-1rem)] bg-blue-600 rounded-lg transition-all duration-300 ease-in-out"
-                style={indicatorStyle}
-                aria-hidden="true"
-            />
-            {navItems.map((item, index) => (
-                 <BottomNavItem 
-                    key={item.page}
-                    ref={el => { itemRefs.current[index] = el }}
-                    label={item.label} 
-                    icon={item.icon} 
-                    isActive={currentPage === item.page} 
-                    onClick={() => onNavigate(item.page)} 
-                />
-            ))}
-        </div>
-    );
-};
+  static getCurrentUserId(): string | null {
+    return localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+  }
 
-export const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [page, setPage] = useState<Page>('dashboard');
-  const [profilesData, setProfilesData] = useState<Record<string, ProfileData>>(getProfilesDataDB());
-  const [isOnboarding, setIsOnboarding] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const savedTheme = localStorage.getItem('theme');
+  static setCurrentUserId(userId: string): void {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, userId);
+  }
+
+  static removeCurrentUserId(): void {
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+  }
+
+  static getTheme(): 'light' | 'dark' {
+    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
     if (savedTheme === 'dark' || savedTheme === 'light') {
       return savedTheme;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
+  }
+
+  static setTheme(theme: 'light' | 'dark'): void {
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  }
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+const getDefaultSymptomCheckerState = (): SymptomCheckerState => ({
+  chat: null,
+  history: [],
+  isLoading: false,
+  suggestedReplies: [],
+});
+
+const createDefaultProfileData = (): ProfileData => ({
+  plan: null,
+  isPlanLoading: false,
+  planError: null,
+  symptomCheckerState: getDefaultSymptomCheckerState(),
+  habits: INITIAL_HABITS,
+  habitHistory: {},
+});
+
+// ==================== BOTTOM NAV COMPONENT ====================
+
+interface BottomNavItemProps {
+  label: string;
+  icon: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+const BottomNavItem = React.forwardRef<HTMLAnchorElement, BottomNavItemProps>(
+  ({ label, icon, isActive, onClick }, ref) => (
+    <a
+      ref={ref}
+      onClick={onClick}
+      className={`relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-1 cursor-pointer transition-colors duration-300 ${
+        isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+      }`}
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      aria-current={isActive ? 'page' : undefined}
+    >
+      <div className="flex h-8 w-8 items-center justify-center">
+        <span className="material-symbols-outlined">{icon}</span>
+      </div>
+      <p className="text-xs font-medium leading-normal tracking-[0.015em]">{label}</p>
+    </a>
+  )
+);
+
+BottomNavItem.displayName = 'BottomNavItem';
+
+interface BottomNavProps {
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+}
+
+const BottomNav: React.FC<BottomNavProps> = ({ currentPage, onNavigate }) => {
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
+
+  const bottomNavItems = useMemo(
+    () => NAV_ITEMS.filter(item => BOTTOM_NAV_PAGES.includes(item.page)),
+    []
+  );
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    const activeIndex = bottomNavItems.findIndex(item => item.page === currentPage);
+    const activeItem = itemRefs.current[activeIndex];
+
+    if (activeItem) {
+      setIndicatorStyle({
+        left: `${activeItem.offsetLeft}px`,
+        width: `${activeItem.offsetWidth}px`,
+      });
     }
+  }, [currentPage, bottomNavItems]);
+
+  return (
+    <nav
+      className="relative flex gap-1 border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-2 pb-3 pt-2"
+      aria-label="Bottom navigation"
+    >
+      <div
+        className="absolute top-0 bottom-0 my-auto h-[calc(100%-1rem)] bg-blue-600 rounded-lg transition-all duration-300 ease-in-out"
+        style={indicatorStyle}
+        aria-hidden="true"
+      />
+      {bottomNavItems.map((item, index) => (
+        <BottomNavItem
+          key={item.page}
+          ref={el => {
+            itemRefs.current[index] = el;
+          }}
+          label={item.label}
+          icon={item.icon}
+          isActive={currentPage === item.page}
+          onClick={() => onNavigate(item.page)}
+        />
+      ))}
+    </nav>
+  );
+};
+
+// ==================== CUSTOM HOOKS ====================
+
+const useTheme = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => StorageService.getTheme());
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    StorageService.setTheme(theme);
   }, [theme]);
 
-  const handleToggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-  
-  useEffect(() => {
-    const currentUserId = localStorage.getItem(CURRENT_USER_ID_KEY);
-    if (currentUserId) {
-        if (currentUserId === 'guest') {
-            setCurrentUser(guestProfile);
-        } else {
-            const usersDB = getUsersDB();
-            const user = usersDB[currentUserId];
-            if (user) {
-                // This handles cases where a user might have been created before the onboarding flow existed.
-                if (!user.salivaPH || !user.geneticRisk) {
-                    setCurrentUser(user);
-                    setIsOnboarding(true);
-                } else {
-                    setCurrentUser(user);
-                }
-            }
-        }
-    }
-    setIsLoading(false);
+  const toggleTheme = useCallback(() => {
+    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   }, []);
 
+  return { theme, toggleTheme };
+};
+
+const useAuth = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isOnboarding, setIsOnboarding] = useState(false);
+
   useEffect(() => {
-    saveProfilesDataDB(profilesData);
-  }, [profilesData]);
-
-  const getActiveProfileData = (): ProfileData => {
-    if (!currentUser) return {} as ProfileData;
-    const defaultSymptomState: SymptomCheckerState = { chat: null, history: [], isLoading: false, suggestedReplies: [] };
-    const data: Partial<ProfileData> = profilesData[currentUser.id] ?? {};
-
-    return {
-      plan: data.plan ?? null,
-      isPlanLoading: data.isPlanLoading ?? false,
-      planError: data.planError ?? null,
-      symptomCheckerState: data.symptomCheckerState ?? defaultSymptomState,
-      habits: data.habits ?? initialHabitsData,
-      habitHistory: data.habitHistory ?? {},
-    };
-  };
-
-  const updateActiveProfileData = (data: Partial<ProfileData>) => {
-    if (!currentUser) return;
-    setProfilesData(prev => ({
-      ...prev,
-      [currentUser.id]: {
-        ...getActiveProfileData(),
-        ...data
+    const initializeAuth = async () => {
+      const currentUserId = StorageService.getCurrentUserId();
+      
+      if (!currentUserId) {
+        setIsLoading(false);
+        return;
       }
-    }));
-  };
 
-  const activeProfile = currentUser;
-  const activeProfileData = getActiveProfileData();
-  
-  const handleGeneratePlan = useCallback(async () => {
-    if (!activeProfile) return;
-    updateActiveProfileData({ isPlanLoading: true, planError: null });
-    try {
-      const generatedPlan = await generatePersonalizedPlan(activeProfile);
-      updateActiveProfileData({ plan: generatedPlan });
-    } catch (err) {
-      updateActiveProfileData({ planError: 'Failed to generate plan. Please check your API key and try again.' });
-      console.error(err);
-    } finally {
-      updateActiveProfileData({ isPlanLoading: false });
-    }
-  }, [activeProfile]);
+      if (currentUserId === 'guest') {
+        setCurrentUser(GUEST_PROFILE);
+      } else {
+        const usersDB = StorageService.getUsersDB();
+        const user = usersDB[currentUserId];
+        
+        if (user) {
+          if (!user.salivaPH || !user.geneticRisk) {
+            setCurrentUser(user);
+            setIsOnboarding(true);
+          } else {
+            setCurrentUser(user);
+          }
+        }
+      }
+      
+      setIsLoading(false);
+    };
 
-  const handleToggleHabit = (habitId: string) => {
-    if (!currentUser) return;
+    initializeAuth();
+  }, []);
 
-    const currentData = getActiveProfileData();
-    const today = getDateString(new Date());
-    const newHistory = { ...currentData.habitHistory };
-    const todaysCompletions = newHistory[today] ? [...newHistory[today]] : [];
-    const habitIndex = todaysCompletions.indexOf(habitId);
-
-    if (habitIndex > -1) {
-        todaysCompletions.splice(habitIndex, 1);
-    } else {
-        todaysCompletions.push(habitId);
-    }
-
-    if (todaysCompletions.length > 0) {
-        newHistory[today] = todaysCompletions;
-    } else {
-        delete newHistory[today];
-    }
-
-    updateActiveProfileData({ habitHistory: newHistory });
-  };
-
-  const handleLogin = (method: 'google' | 'guest') => {
+  const login = useCallback((method: 'google' | 'guest') => {
     setIsLoading(true);
 
     if (method === 'guest') {
-        setCurrentUser(guestProfile);
-        setPage('dashboard');
-        localStorage.setItem(CURRENT_USER_ID_KEY, guestProfile.id);
-        setIsOnboarding(false);
-        setTimeout(() => setIsLoading(false), 500);
-        return;
+      setCurrentUser(GUEST_PROFILE);
+      StorageService.setCurrentUserId(GUEST_PROFILE.id);
+      setIsOnboarding(false);
+      setTimeout(() => setIsLoading(false), 500);
+      return;
     }
 
-    // 'google'
+    // Mock Google login
     const mockGoogleUser = {
-        id: 'google-123456789',
-        name: 'Charlie Brown',
-        email: 'charlie.brown@example.com',
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop',
+      id: 'google-123456789',
+      name: 'Charlie Brown',
+      email: 'charlie.brown@example.com',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop',
     };
-    
-    const usersDB = getUsersDB();
-    const existingUser = Object.values(usersDB).find(u => u.authProviderId === mockGoogleUser.id);
+
+    const usersDB = StorageService.getUsersDB();
+    const existingUser = Object.values(usersDB).find(
+      u => u.authProviderId === mockGoogleUser.id
+    );
 
     if (existingUser) {
-        // Existing user logs in directly
-        setCurrentUser(existingUser);
-        localStorage.setItem(CURRENT_USER_ID_KEY, existingUser.id);
-        setIsOnboarding(false);
-        setPage('dashboard');
+      setCurrentUser(existingUser);
+      StorageService.setCurrentUserId(existingUser.id);
+      setIsOnboarding(false);
     } else {
-        // New user starts onboarding
-        const partialNewUser: UserProfile = {
-            id: `user-${Date.now()}`,
-            authProviderId: mockGoogleUser.id,
-            name: mockGoogleUser.name,
-            email: mockGoogleUser.email,
-            avatarUrl: mockGoogleUser.avatarUrl,
-            joinDate: new Date().getFullYear().toString(),
-            // Leave biometrics and goals to be filled in during onboarding
-            salivaPH: 0, // temporary
-            geneticRisk: 'Low', // temporary
-            bruxism: 'None', // temporary
-            lifestyle: 'New user, just getting started!',
-            goals: [],
-            bio: 'Exploring oral biohacking.',
-            phone: 'N/A',
-            gender: 'Other',
-            dateOfBirth: 'N/A',
-            height: 0,
-            weight: 0,
-            bloodType: 'N/A',
-            dietaryRestrictions: 'N/A',
-            allergies: 'N/A',
-            medications: 'N/A',
-            doctorName: 'N/A',
-        };
-        setCurrentUser(partialNewUser);
-        setIsOnboarding(true);
+      const partialNewUser: UserProfile = {
+        id: `user-${Date.now()}`,
+        authProviderId: mockGoogleUser.id,
+        name: mockGoogleUser.name,
+        email: mockGoogleUser.email,
+        avatarUrl: mockGoogleUser.avatarUrl,
+        joinDate: new Date().getFullYear().toString(),
+        salivaPH: 0,
+        geneticRisk: 'Low',
+        bruxism: 'None',
+        lifestyle: 'New user, just getting started!',
+        goals: [],
+        bio: 'Exploring oral biohacking.',
+        phone: 'N/A',
+        gender: 'Other',
+        dateOfBirth: 'N/A',
+        height: 0,
+        weight: 0,
+        bloodType: 'N/A',
+        dietaryRestrictions: 'N/A',
+        allergies: 'N/A',
+        medications: 'N/A',
+        doctorName: 'N/A',
+      };
+      setCurrentUser(partialNewUser);
+      setIsOnboarding(true);
     }
-    
+
     setTimeout(() => setIsLoading(false), 500);
-  };
+  }, []);
 
-    const handleCompleteOnboarding = (updatedProfileData: Partial<UserProfile>) => {
-        if (!currentUser) return;
-
-        const completeProfile: UserProfile = {
-            ...currentUser,
-            ...updatedProfileData,
-        };
-        
-        // Save the now-complete profile to the database
-        const usersDB = getUsersDB();
-        usersDB[completeProfile.id] = completeProfile;
-        saveUsersDB(usersDB);
-
-        // Update state and log the user in
-        setCurrentUser(completeProfile);
-        localStorage.setItem(CURRENT_USER_ID_KEY, completeProfile.id);
-        setIsOnboarding(false);
-        setPage('dashboard');
-    };
-
-  const handleLogout = () => {
+  const logout = useCallback(() => {
     setCurrentUser(null);
     setIsOnboarding(false);
-    localStorage.removeItem(CURRENT_USER_ID_KEY);
+    StorageService.removeCurrentUserId();
+  }, []);
+
+  const completeOnboarding = useCallback((updatedProfileData: Partial<UserProfile>) => {
+    setCurrentUser(prevUser => {
+      if (!prevUser) return null;
+
+      const completeProfile: UserProfile = {
+        ...prevUser,
+        ...updatedProfileData,
+      };
+
+      const usersDB = StorageService.getUsersDB();
+      usersDB[completeProfile.id] = completeProfile;
+      StorageService.saveUsersDB(usersDB);
+      StorageService.setCurrentUserId(completeProfile.id);
+
+      setIsOnboarding(false);
+      return completeProfile;
+    });
+  }, []);
+
+  return {
+    isLoading,
+    currentUser,
+    isOnboarding,
+    login,
+    logout,
+    completeOnboarding,
   };
+};
+
+const useProfileData = (currentUser: UserProfile | null) => {
+  const [profilesData, setProfilesData] = useState<Record<string, ProfileData>>(() =>
+    StorageService.getProfilesDataDB()
+  );
+
+  useEffect(() => {
+    StorageService.saveProfilesDataDB(profilesData);
+  }, [profilesData]);
+
+  const getActiveProfileData = useCallback((): ProfileData => {
+    if (!currentUser) return createDefaultProfileData();
+    return profilesData[currentUser.id] ?? createDefaultProfileData();
+  }, [currentUser, profilesData]);
+
+  const updateActiveProfileData = useCallback(
+    (data: Partial<ProfileData>) => {
+      if (!currentUser) return;
+      
+      setProfilesData(prev => ({
+        ...prev,
+        [currentUser.id]: {
+          ...getActiveProfileData(),
+          ...data,
+        },
+      }));
+    },
+    [currentUser, getActiveProfileData]
+  );
+
+  return {
+    activeProfileData: getActiveProfileData(),
+    updateActiveProfileData,
+  };
+};
+
+// ==================== MAIN APP COMPONENT ====================
+
+export const App: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
+  const { isLoading, currentUser, isOnboarding, login, logout, completeOnboarding } = useAuth();
+  const { activeProfileData, updateActiveProfileData } = useProfileData(currentUser);
   
-  const handleNavigate = (page: Page) => {
-    setPage(page);
-  };
+  const [page, setPage] = useState<Page>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleUpdateProfile = (updatedProfile: UserProfile) => {
+  const handleGeneratePlan = useCallback(async () => {
     if (!currentUser) return;
-
-    setCurrentUser(updatedProfile);
-    if (updatedProfile.id !== 'guest') {
-        const usersDB = getUsersDB();
-        usersDB[updatedProfile.id] = updatedProfile;
-        saveUsersDB(usersDB);
+    
+    updateActiveProfileData({ isPlanLoading: true, planError: null });
+    
+    try {
+      const generatedPlan = await generatePersonalizedPlan(currentUser);
+      updateActiveProfileData({ plan: generatedPlan });
+    } catch (err) {
+      updateActiveProfileData({
+        planError: 'Failed to generate plan. Please check your API key and try again.',
+      });
+      console.error('Plan generation error:', err);
+    } finally {
+      updateActiveProfileData({ isPlanLoading: false });
     }
-  };
+  }, [currentUser, updateActiveProfileData]);
 
-  const handleExportData = () => {
+  const handleToggleHabit = useCallback(
+    (habitId: string) => {
+      if (!currentUser) return;
+
+      const today = getDateString(new Date());
+      const newHistory = { ...activeProfileData.habitHistory };
+      const todaysCompletions = newHistory[today] ? [...newHistory[today]] : [];
+      const habitIndex = todaysCompletions.indexOf(habitId);
+
+      if (habitIndex > -1) {
+        todaysCompletions.splice(habitIndex, 1);
+      } else {
+        todaysCompletions.push(habitId);
+      }
+
+      if (todaysCompletions.length > 0) {
+        newHistory[today] = todaysCompletions;
+      } else {
+        delete newHistory[today];
+      }
+
+      updateActiveProfileData({ habitHistory: newHistory });
+    },
+    [currentUser, activeProfileData.habitHistory, updateActiveProfileData]
+  );
+
+  const handleNavigate = useCallback((newPage: Page) => {
+    setPage(newPage);
+    setIsSidebarOpen(false);
+  }, []);
+
+  const handleUpdateProfile = useCallback(
+    (updatedProfile: UserProfile) => {
+      if (!currentUser || updatedProfile.id === 'guest') return;
+
+      const usersDB = StorageService.getUsersDB();
+      usersDB[updatedProfile.id] = updatedProfile;
+      StorageService.saveUsersDB(usersDB);
+    },
+    [currentUser]
+  );
+
+  const handleExportData = useCallback(() => {
     if (!currentUser) return;
-    
+
     const userData = {
-        profile: currentUser,
-        data: getActiveProfileData(),
+      profile: currentUser,
+      data: activeProfileData,
     };
-    
+
     const dataStr = JSON.stringify(userData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: "application/json"});
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = `oralBioAI_data_${currentUser.id}_${getDateString(new Date())}.json`;
@@ -387,99 +526,160 @@ export const App: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  }, [currentUser, activeProfileData]);
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = useCallback(() => {
     if (!currentUser || currentUser.id === 'guest') return;
 
-    const usersDB = getUsersDB();
+    const usersDB = StorageService.getUsersDB();
     delete usersDB[currentUser.id];
-    saveUsersDB(usersDB);
+    StorageService.saveUsersDB(usersDB);
 
-    const profilesDataDB = getProfilesDataDB();
+    const profilesDataDB = StorageService.getProfilesDataDB();
     delete profilesDataDB[currentUser.id];
-    saveProfilesDataDB(profilesDataDB);
+    StorageService.saveProfilesDataDB(profilesDataDB);
 
-    handleLogout();
-  };
-  
-  const isAuthenticated = !!currentUser;
+    logout();
+  }, [currentUser, logout]);
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-slate-900"><Spinner /></div>;
-  }
+  const renderPage = useCallback(() => {
+    const pageContainerClass = 'p-4 sm:p-6';
 
-  if (!isAuthenticated || !activeProfile) {
-    return <Login onLogin={handleLogin} />;
-  }
-  
-  if (isOnboarding) {
-      return <OnboardingWizard user={activeProfile} onComplete={handleCompleteOnboarding} />;
-  }
-
-  const renderPage = () => {
     switch (page) {
       case 'plan':
-        return <div className="p-4"><PersonalizedPlanComponent 
-                  plan={activeProfileData.plan}
-                  isLoading={activeProfileData.isPlanLoading}
-                  onGeneratePlan={handleGeneratePlan}
-                  error={activeProfileData.planError}
-                /></div>;
+        return (
+          <div className={pageContainerClass}>
+            <PersonalizedPlanComponent
+              plan={activeProfileData.plan}
+              isLoading={activeProfileData.isPlanLoading}
+              onGeneratePlan={handleGeneratePlan}
+              error={activeProfileData.planError}
+            />
+          </div>
+        );
       case 'smile-design-studio':
-        return <div className="p-4"><SmileDesignStudio /></div>;
+        return (
+          <div className={pageContainerClass}>
+            <SmileDesignStudio />
+          </div>
+        );
       case 'find-dentist':
-        return <div className="p-4"><FindDentist /></div>;
+        return (
+          <div className={pageContainerClass}>
+            <FindDentist />
+          </div>
+        );
       case 'education':
-        return <div className="p-4"><EducationalContent /></div>;
+        return (
+          <div className={pageContainerClass}>
+            <EducationalContent />
+          </div>
+        );
       case 'profile':
-        return <UserProfilePage 
-                  profile={activeProfile} 
-                  onUpdateProfile={handleUpdateProfile} 
-                  theme={theme}
-                  onToggleTheme={handleToggleTheme}
-                  onExportData={handleExportData}
-                  onDeleteAccount={handleDeleteAccount}
-                />;
+        return (
+          <UserProfilePage
+            profile={currentUser!}
+            onUpdateProfile={handleUpdateProfile}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onExportData={handleExportData}
+            onDeleteAccount={handleDeleteAccount}
+          />
+        );
       case 'habit-history':
-        return <HabitHistory
-                  habits={activeProfileData.habits}
-                  habitHistory={activeProfileData.habitHistory}
-               />;
+        return (
+          <div className={pageContainerClass}>
+            <HabitHistory
+              habits={activeProfileData.habits}
+              habitHistory={activeProfileData.habitHistory}
+            />
+          </div>
+        );
       case 'symptom-checker':
-        return <SymptomChecker 
-                  state={activeProfileData.symptomCheckerState} 
-                  setState={(updater) => {
-                    const newState = typeof updater === 'function' 
-                      ? updater(activeProfileData.symptomCheckerState) 
-                      : updater;
-                    updateActiveProfileData({ symptomCheckerState: newState });
-                  }}
-                />;
+        return (
+          <div className="h-full">
+            <SymptomChecker
+              state={activeProfileData.symptomCheckerState}
+              setState={updater => {
+                const newState =
+                  typeof updater === 'function'
+                    ? updater(activeProfileData.symptomCheckerState)
+                    : updater;
+                updateActiveProfileData({ symptomCheckerState: newState });
+              }}
+            />
+          </div>
+        );
       case 'dashboard':
       default:
-        return <Dashboard 
-                  profile={activeProfile} 
-                  onNavigate={handleNavigate} 
-                  habits={activeProfileData.habits}
-                  habitHistory={activeProfileData.habitHistory}
-                  onToggleHabit={handleToggleHabit}
-                />;
+        return (
+          <Dashboard
+            profile={currentUser!}
+            onNavigate={handleNavigate}
+            habits={activeProfileData.habits}
+            habitHistory={activeProfileData.habitHistory}
+            onToggleHabit={handleToggleHabit}
+          />
+        );
     }
-  };
+  }, [
+    page,
+    currentUser,
+    activeProfileData,
+    handleGeneratePlan,
+    handleUpdateProfile,
+    handleNavigate,
+    handleToggleHabit,
+    theme,
+    toggleTheme,
+    handleExportData,
+    handleDeleteAccount,
+  ]);
 
-  return (
-    <div className="relative flex size-full min-h-screen flex-col bg-white dark:bg-slate-900 justify-between">
-      <div className="flex flex-col flex-1">
-        <Header page={page} onNavigate={handleNavigate} onLogout={handleLogout} />
-        <main className="flex-1 overflow-y-auto">
-          {renderPage()}
-        </main>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <Spinner />
       </div>
-      <footer className="sticky bottom-0 z-10">
-        <BottomNav currentPage={page} onNavigate={handleNavigate} />
-        <div className="h-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"></div>
-      </footer>
+    );
+  }
+
+  // Unauthenticated state
+  if (!currentUser) {
+    return <Login onLogin={login} />;
+  }
+
+  // Onboarding state
+  if (isOnboarding) {
+    return <OnboardingWizard user={currentUser} onComplete={completeOnboarding} />;
+  }
+
+  // Main application
+  return (
+    <div className="relative flex size-full min-h-screen flex-col bg-white dark:bg-slate-900 lg:flex-row">
+      <Sidebar
+        currentPage={page}
+        onNavigate={handleNavigate}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={currentUser}
+        onLogout={logout}
+      />
+      <div className="flex flex-1 flex-col justify-between">
+        <div className="flex flex-1 flex-col">
+          <Header
+            page={page}
+            onNavigate={handleNavigate}
+            onToggleSidebar={() => setIsSidebarOpen(true)}
+          />
+          <main className="flex-1 overflow-y-auto">{renderPage()}</main>
+        </div>
+        <footer className="sticky bottom-0 z-10 lg:hidden">
+          <BottomNav currentPage={page} onNavigate={handleNavigate} />
+          <div className="h-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm" />
+        </footer>
+      </div>
     </div>
   );
 };
