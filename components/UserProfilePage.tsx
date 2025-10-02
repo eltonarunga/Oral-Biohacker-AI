@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef } from 'react';
 import { UserProfile, Goal } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
@@ -146,14 +145,14 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
 
     return (
         <>
-            <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-5 gap-6 xl:gap-8">
                 {/* Left Column */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className="lg:col-span-2 space-y-6">
                     {/* Profile Header */}
                      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-6 flex w-full flex-col gap-4 items-center">
                         <div className="relative">
                             <button onClick={handleAvatarUploadClick} className="group rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500" aria-label="Change profile photo">
-                                <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 object-cover transition-opacity group-hover:opacity-60" />
+                                <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-36 w-36 object-cover transition-opacity group-hover:opacity-60" />
                                 <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                     <span className="material-symbols-outlined text-4xl">add_a_photo</span>
                                 </div>
@@ -173,7 +172,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                 </div>
                 
                 {/* Right Column */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                     {/* Personal Information */}
                     <div>
                         <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Personal Information</h3>

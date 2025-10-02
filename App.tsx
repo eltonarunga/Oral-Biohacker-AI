@@ -15,6 +15,7 @@ import { getDateString } from './utils/habits';
 import { Spinner } from './components/common/Spinner';
 import OnboardingWizard from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
+import { predefinedAvatars } from './data/predefinedAvatars';
 
 // ==================== CONSTANTS ====================
 
@@ -49,7 +50,7 @@ const GUEST_PROFILE: UserProfile = {
     { id: 'g-guest-1', text: 'Learn about oil pulling', isCompleted: false },
     { id: 'g-guest-2', text: 'Complete first symptom check', isCompleted: false },
   ],
-  avatarUrl: 'https://images.unsplash.com/photo-1549078642-b2c444611bf5?q=80&w=2070&auto=format&fit=crop',
+  avatarUrl: predefinedAvatars[3],
   bio: 'Curious about oral biohacking',
   joinDate: new Date().getFullYear().toString(),
   email: 'guest@example.com',
@@ -179,7 +180,7 @@ const BottomNavItem = React.forwardRef<HTMLAnchorElement, BottomNavItemProps>(
     <a
       ref={ref}
       onClick={onClick}
-      className={`relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-1 cursor-pointer transition-colors duration-300 ${
+      className={`relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-2 cursor-pointer transition-colors duration-300 ${
         isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
       }`}
       role="button"
@@ -187,8 +188,8 @@ const BottomNavItem = React.forwardRef<HTMLAnchorElement, BottomNavItemProps>(
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
     >
-      <div className="flex h-8 w-8 items-center justify-center">
-        <span className="material-symbols-outlined">{icon}</span>
+      <div className="flex h-7 w-7 items-center justify-center">
+        <span className="material-symbols-outlined text-2xl">{icon}</span>
       </div>
       <p className="text-xs font-medium leading-normal tracking-[0.015em]">{label}</p>
     </a>
@@ -225,7 +226,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPage, onNavigate }) => {
 
   return (
     <nav
-      className="relative flex gap-1 border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-2 pb-3 pt-2"
+      className="relative flex h-16 items-stretch gap-1 border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-2"
       aria-label="Bottom navigation"
     >
       <div
@@ -387,7 +388,7 @@ const useAuth = () => {
         bruxism: 'None',
         lifestyle: 'New user, just getting started!',
         goals: [],
-        avatarUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=100&auto=format&fit=crop', // A generic avatar
+        avatarUrl: predefinedAvatars[4], // A generic avatar
         bio: 'Exploring oral biohacking.',
         phone: 'N/A',
         gender: 'Other',
@@ -614,7 +615,7 @@ export const App: React.FC = () => {
   }, [currentUser, logout]);
 
   const renderPage = useCallback(() => {
-    const pageContainerClass = 'p-4 sm:p-6';
+    const pageContainerClass = 'p-4 sm:p-6 lg:p-8';
 
     switch (page) {
       case 'plan':
@@ -659,12 +660,10 @@ export const App: React.FC = () => {
         );
       case 'habit-history':
         return (
-          <div className={pageContainerClass}>
-            <HabitHistory
-              habits={activeProfileData.habits}
-              habitHistory={activeProfileData.habitHistory}
-            />
-          </div>
+          <HabitHistory
+            habits={activeProfileData.habits}
+            habitHistory={activeProfileData.habitHistory}
+          />
         );
       case 'symptom-checker':
         return (
@@ -743,7 +742,7 @@ export const App: React.FC = () => {
         user={currentUser}
         onLogout={logout}
       />
-      <div className="flex flex-1 flex-col justify-between">
+      <div className="flex flex-1 flex-col justify-between min-w-0">
         <div className="flex flex-1 flex-col">
           <Header
             page={page}

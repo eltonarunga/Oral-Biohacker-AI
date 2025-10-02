@@ -1,5 +1,7 @@
 
+
 import { UserProfile } from '../types';
+import { predefinedAvatars } from './predefinedAvatars';
 
 export const mockProfiles: UserProfile[] = [
   {
@@ -14,7 +16,7 @@ export const mockProfiles: UserProfile[] = [
       { id: 'g1-2', text: 'Improve gum health score', isCompleted: false },
       { id: 'g1-3', text: 'Floss daily for 30 days', isCompleted: false },
     ],
-    avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=1887&auto=format&fit=crop',
+    avatarUrl: predefinedAvatars[0],
     bio: 'Tech lead passionate about quantified self.',
     joinDate: '2023',
     email: 'alex.j@example.com',
@@ -40,7 +42,7 @@ export const mockProfiles: UserProfile[] = [
       { id: 'g2-1', text: 'Prevent new cavities this year', isCompleted: false },
       { id: 'g2-2', text: 'Strengthen enamel with supplements', isCompleted: false },
     ],
-    avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop',
+    avatarUrl: predefinedAvatars[1],
     bio: 'Finding time for health between meetings.',
     joinDate: '2022',
     email: 'sam.lee@example.com',
@@ -67,7 +69,7 @@ export const mockProfiles: UserProfile[] = [
       { id: 'g3-2', text: 'Maintain a bright, white smile', isCompleted: true },
       { id: 'g3-3', text: 'Counteract effects of sports drinks', isCompleted: false },
     ],
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop',
+    avatarUrl: predefinedAvatars[2],
     bio: 'Marathon runner and weekend warrior.',
     joinDate: '2023',
     email: 'ben.c@example.com',

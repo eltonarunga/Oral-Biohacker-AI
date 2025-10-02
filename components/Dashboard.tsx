@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { UserProfile, Habit, Page } from '../types';
 import { getDateString } from '../utils/habits';
@@ -28,11 +29,11 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, onToggle, isLast, isComple
                 <span className="material-symbols-outlined">{habit.icon}</span>
             </div>
             <div className="flex flex-col justify-center">
-                <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-1">{habit.name}</p>
-                <div className="flex items-center gap-2">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">{habit.time}</p>
+                 <div className="flex items-center gap-2">
+                    <p className="text-gray-900 dark:text-gray-50 text-base font-medium leading-normal line-clamp-1">{habit.name}</p>
                     <HabitTracker habitId={habit.id} habitHistory={habitHistory} />
                 </div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">{habit.time}</p>
             </div>
         </div>
         <div className="shrink-0">
@@ -69,10 +70,10 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, onNavigate, habits, habi
     }, [habits]);
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
                 <div className="flex items-center gap-4">
-                    <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="aspect-square bg-cover rounded-full h-20 w-20 object-cover" />
+                    <img src={profile.avatarUrl} alt={`${profile.name}'s avatar`} className="aspect-square bg-cover rounded-full h-24 w-24 object-cover" />
                     <div className="flex flex-col justify-center">
                         <p className="text-gray-900 dark:text-gray-50 text-[22px] font-bold leading-tight tracking-[-0.015em]">Welcome, {profile.name.split(' ')[0]}</p>
                         <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal">{profile.bio}</p>
@@ -82,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, onNavigate, habits, habi
 
             <PersonalizedInsights profile={profile} habitHistory={habitHistory} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8">
                  <Goals goals={profile.goals} onNavigate={onNavigate} />
                  <div>
                     <h2 className="text-gray-900 dark:text-gray-50 text-xl font-bold leading-tight tracking-[-0.015em] mb-3">Your Biohacking Plan</h2>

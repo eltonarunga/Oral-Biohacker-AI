@@ -167,14 +167,14 @@ const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
                             <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
                                 <span className="material-symbols-outlined text-lg">spark</span>
                             </div>
-                            <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[80%]">
+                            <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[85%] md:max-w-2xl">
                                 <FormattedMessage text={msg.text} />
                                 <Sources sources={msg.sources || []} />
                             </div>
                         </div>
                     ) : (
                         <div key={index} className="flex items-start gap-3 justify-end message-enter">
-                            <div className="bg-blue-600 text-white rounded-2xl rounded-tr-none p-3 max-w-[80%]">
+                            <div className="bg-blue-600 text-white rounded-2xl rounded-tr-none p-3 max-w-[85%] md:max-w-2xl">
                                 <p className="text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
                             </div>
                             <div className="flex-shrink-0 size-8 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 flex items-center justify-center rounded-full">

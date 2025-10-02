@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleCredentialResponse } from '../types';
 import { Spinner } from './common/Spinner';
+import { predefinedAvatars } from '../data/predefinedAvatars';
 
 interface LoginProps {
   onGoogleLogin: (response: GoogleCredentialResponse) => void;
@@ -102,8 +103,8 @@ const Login: React.FC<LoginProps> = ({ onGoogleLogin, onGuestLogin, onEmailSignU
 
 
   return (
-    <div className="flex flex-col min-h-screen justify-between">
-      <div className="px-4 pt-8 max-w-sm mx-auto w-full">
+    <div className="flex flex-col min-h-screen justify-center">
+      <div className="px-4 py-8 max-w-md mx-auto w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground-light dark:text-foreground-dark tracking-tight">{isSignUp ? 'Create your account' : 'Sign In'}</h1>
           <p className="text-subtle-light dark:text-subtle-dark mt-2">{isSignUp ? 'Start your personalized oral biohacking journey.' : 'Welcome back! Sign in to continue.'}</p>
@@ -160,14 +161,14 @@ const Login: React.FC<LoginProps> = ({ onGoogleLogin, onGuestLogin, onEmailSignU
                 Continue as Guest
             </button>
         </div>
-      </div>
-      <div className="px-4 pb-8 pt-4 text-center">
-        <p className="text-sm text-subtle-light dark:text-subtle-dark">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}
-          <button onClick={() => setIsSignUp(!isSignUp)} className="font-bold text-primary ml-1 hover:underline">
-            {isSignUp ? 'Sign In' : 'Sign Up'}
-          </button>
-        </p>
+         <div className="pt-8 text-center">
+            <p className="text-sm text-subtle-light dark:text-subtle-dark">
+            {isSignUp ? "Already have an account?" : "Don't have an account?"}
+            <button onClick={() => setIsSignUp(!isSignUp)} className="font-bold text-primary ml-1 hover:underline">
+                {isSignUp ? 'Sign In' : 'Sign Up'}
+            </button>
+            </p>
+        </div>
       </div>
     </div>
   );

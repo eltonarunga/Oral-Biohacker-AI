@@ -98,6 +98,51 @@ This project is a static web application that can be run by serving the files fr
 
 4.  **Open the application** in your browser. If you used `serve`, it's likely at `http://localhost:3000`. For the Python server, it's typically `http://localhost:8000`.
 
+## 🗺️ Next Stage Roadmap
+
+### 🔒 1. Security & Data Handling
+- **API Keys**: Double-check that your `API_KEY` is only in Cloud Run environment variables (never in the repo).
+- **User Data**: If you’re handling biometrics or health-related data, consider encrypted storage (Firebase/Supabase + row-level security).
+- **Legal**: Add a Privacy Policy & Disclaimer page (important for anything health-adjacent).
+
+---
+
+### ⚡ 2. UX Polish
+- **Onboarding Flow**: Walk users through setting up biometrics, goals, and habits.
+- **Gamification**: Add streak counters, badges, or AI “coach feedback” to habit tracking.
+- **Responsive UI**: Since you’re using Tailwind, test on mobile → Cloud Run apps often get early traction on mobile users.
+
+---
+
+### 🤖 3. AI Optimization
+- **Prompt Library**: Create a `/prompts/` folder with structured prompts (so you can refine without digging into code).
+- **Response Structuring**: Use Gemini to return JSON objects instead of raw text when generating plans, e.g.,
+  ```json
+  {
+    "plan": {
+      "morning": ["Oil pulling", "Vitamin D supplement"],
+      "afternoon": ["Hydration reminder"],
+      "night": ["Floss", "Magnesium supplement"]
+    }
+  }
+  ```
+  This makes rendering and updates cleaner and safer.
+- **Fine-tuning / RAG**: Long term, you could build a curated oral-health knowledge base and use it for retrieval-augmented generation.
+
+---
+
+### 📊 4. Analytics & Feedback
+- **Analytics**: Add a simple analytics tracker (e.g., PostHog, Plausible, or Firebase Analytics).
+- **Feedback**: Capture which features users click most: Plan Generator, Symptom Checker, Smile Studio, etc.
+
+---
+
+### 🚀 5. Scaling & Future Integrations
+- **Authentication**: Implement secure user login (e.g., Cloud Run + Firebase Auth for Google/Apple sign-in).
+- **APIs**: Integrate Google Maps API for location-based results in the Dentist Finder.
+- **Wearables**: Integrate with Apple Health / Google Fit for biometrics if you want to go deep biohacker.
+- **Monetization**: Explore a freemium model (basic features free, premium plan with advanced analytics, AI smile design, custom coaching).
+
 ## 🤝 Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.

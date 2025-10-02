@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Habit } from '../types';
 import { getDateString } from '../utils/habits';
@@ -9,47 +8,83 @@ interface HabitHistoryProps {
     habitHistory: Record<string, string[]>;
 }
 
-const DaySquare: React.FC<{ completed: boolean, isToday: boolean }> = ({ completed, isToday }) => {
-    const baseClasses = "h-5 w-5 rounded";
-    const completedClasses = "bg-green-500";
-    const incompleteClasses = "bg-gray-200 dark:bg-gray-700";
-    const todayClasses = "ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-slate-900";
+const HabitCalendar: React.FC<{ habit: Habit, history: Record<string, string[]> }> = ({ habit, history }) => {
+    const today = new Date();
+    const currentDate = new Date(); // Using current date for the calendar
+    
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
+    const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday
+
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const emptyDays = Array.from({ length: startDayOfWeek });
+
+    const todayDateString = getDateString(new Date());
+    
     return (
-        <div 
-            className={`${baseClasses} ${completed ? completedClasses : incompleteClasses} ${isToday ? todayClasses : ''}`} 
-            aria-label={completed ? 'Habit completed' : 'Habit not completed'}
-        />
-    );
-};
-
-const HabitHistoryRow: React.FC<{ habit: Habit, history: Record<string, string[]> }> = ({ habit, history }) => {
-    // Create an array of the last 30 dates, ending with today
-    const dates = Array.from({ length: 30 }).map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (29 - i));
-        return d;
-    });
-
-    const todayStr = getDateString(new Date());
-
-    return (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            {/* Header */}
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">{habit.name}</h3>
+                <div>
+                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">{habit.name}</h3>
+                     <p className="text-sm text-gray-500 dark:text-gray-400">{monthName} {year}</p>
+                </div>
                 <HabitTracker habitId={habit.id} habitHistory={history} />
             </div>
-            <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-30 gap-1.5">
-                {dates.map((date, i) => {
+            
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                {/* Weekday Headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="font-semibold p-1">{day}</div>)}
+                
+                {/* Empty cells for padding */}
+                {emptyDays.map((_, i) => <div key={`empty-${i}`} />)}
+                
+                {/* Day cells */}
+                {days.map(day => {
+                    const date = new Date(year, month, day);
                     const dateStr = getDateString(date);
-                    const isCompleted = history[dateStr]?.includes(habit.id) ?? false;
-                    const isToday = todayStr === dateStr;
-                    return <DaySquare key={i} completed={isCompleted} isToday={isToday} />;
+                    const isCompleted = history[dateStr]?.includes(habit.id);
+                    const isToday = dateStr === todayDateString;
+                    
+                    // A simple check to see if the date is in the future.
+                    // We compare year, month, and day to avoid timezone issues.
+                    const isFuture = date.getFullYear() > today.getFullYear() ||
+                                  (date.getFullYear() === today.getFullYear() && date.getMonth() > today.getMonth()) ||
+                                  (date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() > today.getDate());
+
+                    let cellClasses = "w-full aspect-square flex items-center justify-center rounded-full text-sm transition-colors";
+                    
+                    if (isFuture) {
+                        cellClasses += " text-gray-400 dark:text-gray-600";
+                    } else {
+                         if (isCompleted) {
+                            cellClasses += " bg-green-500 text-white font-bold";
+                         } else {
+                            cellClasses += " bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200";
+                         }
+                    }
+
+                    if (isToday) {
+                        cellClasses += " ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-800";
+                    }
+                    
+                    return (
+                        <div key={day} className={cellClasses} aria-label={`Day ${day}, ${isCompleted ? 'completed' : 'not completed'}`}>
+                            {day}
+                        </div>
+                    );
                 })}
             </div>
         </div>
     );
 };
+
 
 const HabitHistory: React.FC<HabitHistoryProps> = ({ habits, habitHistory }) => {
     // Sort habits to show clinically proven ones first
@@ -60,9 +95,9 @@ const HabitHistory: React.FC<HabitHistoryProps> = ({ habits, habitHistory }) => 
     });
 
     return (
-        <div className="p-4 space-y-4">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
             {sortedHabits.map(habit => (
-                <HabitHistoryRow key={habit.id} habit={habit} history={habitHistory} />
+                <HabitCalendar key={habit.id} habit={habit} history={habitHistory} />
             ))}
         </div>
     );
