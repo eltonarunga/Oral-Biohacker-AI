@@ -37,8 +37,10 @@ export interface UserProfile {
 }
 
 export interface PersonalizedPlan {
+  planRationale: string;
   supplements: { name: string; dosage: string; reason: string; }[];
-  routines: { name: string; frequency: string; instructions: string; }[];
+  morningRoutines: { name: string; frequency: string; instructions: string; }[];
+  eveningRoutines: { name: string; frequency: string; instructions: string; }[];
   nutrition: { recommendation: string; reason: string; }[];
   alerts: { marker: string; status: 'Good' | 'Fair' | 'Poor'; advice: string; }[];
 }
@@ -50,7 +52,6 @@ export interface ChatMessage {
 }
 
 export interface SymptomCheckerState {
-    chat: Chat | null;
     history: ChatMessage[];
     isLoading: boolean;
     suggestedReplies: string[];

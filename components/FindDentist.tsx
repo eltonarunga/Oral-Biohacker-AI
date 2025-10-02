@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from './common/Card';
 import { Spinner } from './common/Spinner';
-import { findDentistsNearMe, DentistSearchResult } from '../services/geminiService';
+import { findDentists, DentistSearchResult } from '../services/apiService';
 import { Dentist, GroundingChunk } from '../types';
 
 const DentistIcon = () => (
@@ -32,10 +32,11 @@ const FindDentist: React.FC = () => {
             async (position) => {
                 try {
                     const { latitude, longitude } = position.coords;
-                    const searchResult = await findDentistsNearMe(latitude, longitude);
+                    const searchResult = await findDentists(latitude, longitude);
                     setResult(searchResult);
                 } catch (err) {
-                    setError("Could not find dentists. The AI service may be temporarily unavailable.");
+                    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+                    setError(`Could not find dentists. ${errorMessage}`);
                     console.error(err);
                 } finally {
                     setIsLoading(false);
@@ -93,7 +94,7 @@ const FindDentist: React.FC = () => {
                             <div className="mt-6">
                                 <h4 className="text-md font-semibold text-gray-500 dark:text-gray-400 mb-2">Sources:</h4>
                                 <ul className="list-disc list-inside text-sm space-y-1">
-                                    {result.sources.map((source, index) => (
+                                    {result.sources.map((source: any, index) => (
                                         <li key={index}>
                                             <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
                                                 {source.web.title || source.web.uri}

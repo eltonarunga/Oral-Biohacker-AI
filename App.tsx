@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
-import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, GoogleCredentialResponse } from './types';
+import { UserProfile, ProfileData, SymptomCheckerState, Page, Habit, GoogleCredentialResponse, Goal } from './types';
 import PersonalizedPlanComponent from './components/PersonalizedPlan';
 import SymptomChecker from './components/SymptomChecker';
 import EducationalContent from './components/EducationalContent';
-import { generatePersonalizedPlan } from './services/geminiService';
+import * as api from './services/apiService';
 import Login from './components/Login';
 import FindDentist from './components/FindDentist';
 import SmileDesignStudio from './components/SmileDesignStudio';
@@ -15,29 +15,22 @@ import { getDateString } from './utils/habits';
 import { Spinner } from './components/common/Spinner';
 import OnboardingWizard from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
-import { predefinedAvatars } from './data/predefinedAvatars';
 
 // ==================== CONSTANTS ====================
 
 const STORAGE_KEYS = {
-  USERS_DB: 'oralBioAI_usersDB',
-  PROFILES_DATA_DB: 'oralBioAI_profilesDataDB',
-  CURRENT_USER_ID: 'oralBioAI_currentUserId',
+  AUTH_TOKEN: 'oralBioAI_authToken',
   THEME: 'theme',
 } as const;
 
-const INITIAL_HABITS: Habit[] = [
-  { id: 'h6', name: 'Flossing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  { id: 'h7', name: 'Brushing', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  { id: 'h5', name: 'Mouthwash', time: 'Evening', icon: 'dark_mode', category: 'Clinically Proven' },
-  { id: 'h1', name: 'Oil Pulling', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h2', name: 'Tongue Scraping', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h3', name: 'Probiotic Rinse', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h4', name: 'Vitamin D3/K2', time: 'Morning', icon: 'wb_sunny', category: 'Biohacking' },
-  { id: 'h8', name: 'Oral Probiotic', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
-  { id: 'h9', name: 'Magnesium', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
-  { id: 'h10', name: 'Avoid Blue Light', time: 'Evening', icon: 'dark_mode', category: 'Biohacking' },
-];
+const GUEST_PROFILE_DATA: ProfileData = {
+    plan: null,
+    isPlanLoading: false,
+    planError: null,
+    symptomCheckerState: { history: [], isLoading: false, suggestedReplies: [] },
+    habits: [],
+    habitHistory: {},
+};
 
 const GUEST_PROFILE: UserProfile = {
   id: 'guest',
@@ -47,10 +40,10 @@ const GUEST_PROFILE: UserProfile = {
   bruxism: 'None',
   lifestyle: 'Exploring the application.',
   goals: [
-    { id: 'g-guest-1', text: 'Learn about oil pulling', isCompleted: false },
+    { id: 'g-guest-1', text: 'Learn about oral biohacking', isCompleted: false },
     { id: 'g-guest-2', text: 'Complete first symptom check', isCompleted: false },
   ],
-  avatarUrl: predefinedAvatars[3],
+  avatarUrl: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2750%27%20fill%3D%27%23EDE9FE%27%2F%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2750%27%20r%3D%2740%27%20fill%3D%27%238B5CF6%27%2F%3E%3Cline%20x1%3D%2735%27%20y1%3D%2745%27%20x2%3D%2745%27%20y2%3D%2745%27%20stroke%3D%27white%27%20stroke-width%3D%275%27%20stroke-linecap%3D%27round%27%2F%3E%3Cline%20x1%3D%2755%27%20y1%3D%2745%27%20x2%3D%2765%27%20y2%3D%2745%27%20stroke%3D%27white%27%20stroke-width%3D%275%27%20stroke-linecap%3D%27round%27%2F%3E%3Ccircle%20cx%3D%2750%27%20cy%3D%2765%27%20r%3D%2710%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%274%27%2F%3E%3C%2Fsvg%3E',
   bio: 'Curious about oral biohacking',
   joinDate: new Date().getFullYear().toString(),
   email: 'guest@example.com',
@@ -83,88 +76,6 @@ const BOTTOM_NAV_PAGES: readonly Page[] = [
   'smile-design-studio',
   'profile',
 ] as const;
-
-// ==================== STORAGE SERVICE ====================
-
-class StorageService {
-  static getUsersDB(): Record<string, UserProfile> {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.USERS_DB);
-      return data ? JSON.parse(data) : {};
-    } catch (error) {
-      console.error('Error reading users database:', error);
-      return {};
-    }
-  }
-
-  static saveUsersDB(db: Record<string, UserProfile>): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USERS_DB, JSON.stringify(db));
-    } catch (error) {
-      console.error('Error saving users database:', error);
-    }
-  }
-
-  static getProfilesDataDB(): Record<string, ProfileData> {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.PROFILES_DATA_DB);
-      return data ? JSON.parse(data) : {};
-    } catch (error) {
-      console.error('Error reading profiles data:', error);
-      return {};
-    }
-  }
-
-  static saveProfilesDataDB(db: Record<string, ProfileData>): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.PROFILES_DATA_DB, JSON.stringify(db));
-    } catch (error) {
-      console.error('Error saving profiles data:', error);
-    }
-  }
-
-  static getCurrentUserId(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-  }
-
-  static setCurrentUserId(userId: string): void {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, userId);
-  }
-
-  static removeCurrentUserId(): void {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
-  }
-
-  static getTheme(): 'light' | 'dark' {
-    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
-    if (savedTheme === 'dark' || savedTheme === 'light') {
-      return savedTheme;
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  static setTheme(theme: 'light' | 'dark'): void {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  }
-}
-
-// ==================== UTILITY FUNCTIONS ====================
-
-const getDefaultSymptomCheckerState = (): SymptomCheckerState => ({
-  chat: null,
-  history: [],
-  isLoading: false,
-  suggestedReplies: [],
-});
-
-const createDefaultProfileData = (): ProfileData => ({
-  plan: null,
-  isPlanLoading: false,
-  planError: null,
-  symptomCheckerState: getDefaultSymptomCheckerState(),
-  habits: INITIAL_HABITS,
-  habitHistory: {},
-});
 
 // ==================== BOTTOM NAV COMPONENT ====================
 
@@ -253,16 +164,15 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPage, onNavigate }) => {
 // ==================== CUSTOM HOOKS ====================
 
 const useTheme = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => StorageService.getTheme());
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+    if (savedTheme === 'dark' || savedTheme === 'light') return savedTheme;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    StorageService.setTheme(theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
@@ -273,230 +183,135 @@ const useTheme = () => {
 };
 
 const useAuth = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [isOnboarding, setIsOnboarding] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+    const [isOnboarding, setIsOnboarding] = useState(false);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const currentUserId = StorageService.getCurrentUserId();
-      
-      if (!currentUserId) {
-        setIsLoading(false);
-        return;
-      }
+    useEffect(() => {
+        const validateToken = async () => {
+            const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+            if (token) {
+                try {
+                    const { user } = await api.fetchUserProfile();
+                    if (!user.salivaPH || !user.geneticRisk) { // Check if onboarding is incomplete
+                        setIsOnboarding(true);
+                    }
+                    setCurrentUser(user);
+                } catch (error) {
+                    console.error("Session validation failed:", error);
+                    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                }
+            }
+            setIsLoading(false);
+        };
+        validateToken();
+    }, []);
 
-      if (currentUserId === 'guest') {
-        setCurrentUser(GUEST_PROFILE);
-      } else {
-        const usersDB = StorageService.getUsersDB();
-        const user = usersDB[currentUserId];
-        
-        if (user) {
-          if (!user.salivaPH || !user.geneticRisk) {
-            setCurrentUser(user);
-            setIsOnboarding(true);
-          } else {
-            setCurrentUser(user);
-          }
-        }
-      }
-      
-      setIsLoading(false);
-    };
-
-    initializeAuth();
-  }, []);
-
-  const handleGuestLogin = useCallback(() => {
-    setIsLoading(true);
-    setCurrentUser(GUEST_PROFILE);
-    StorageService.setCurrentUserId(GUEST_PROFILE.id);
-    setIsOnboarding(false);
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
-
-  const handleGoogleLogin = useCallback((response: GoogleCredentialResponse) => {
-    setIsLoading(true);
-
-    if (!response.credential) {
-      console.error("Google login failed: No credential returned.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Decode the JWT to get user info (Note: in a real app, you'd verify this on a server)
-    const jwtPayload = JSON.parse(atob(response.credential.split('.')[1]));
-    const { sub: googleId, name, email, picture: avatarUrl } = jwtPayload;
-
-    const usersDB = StorageService.getUsersDB();
-    const existingUser = Object.values(usersDB).find(
-      u => u.authProviderId === googleId
-    );
-
-    if (existingUser) {
-      setCurrentUser(existingUser);
-      StorageService.setCurrentUserId(existingUser.id);
-      setIsOnboarding(false);
-    } else {
-      const partialNewUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        authProviderId: googleId,
-        name: name,
-        email: email,
-        avatarUrl: avatarUrl,
-        joinDate: new Date().getFullYear().toString(),
-        salivaPH: 0,
-        geneticRisk: 'Low',
-        bruxism: 'None',
-        lifestyle: 'New user, just getting started!',
-        goals: [],
-        bio: 'Exploring oral biohacking.',
-        phone: 'N/A',
-        gender: 'Other',
-        dateOfBirth: 'N/A',
-        height: 0,
-        weight: 0,
-        bloodType: 'N/A',
-        dietaryRestrictions: 'N/A',
-        allergies: 'N/A',
-        medications: 'N/A',
-        doctorName: 'N/A',
-      };
-      setCurrentUser(partialNewUser);
-      setIsOnboarding(true);
-    }
-
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
-
-  const handleEmailSignUp = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const usersDB = StorageService.getUsersDB();
-    const existingUser = Object.values(usersDB).find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existingUser) {
-        return { success: false, error: 'An account with this email already exists.' };
-    }
-
-    const newUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        name: email.split('@')[0],
-        email: email,
-        password: password,
-        joinDate: new Date().getFullYear().toString(),
-        salivaPH: 0,
-        geneticRisk: 'Low',
-        bruxism: 'None',
-        lifestyle: 'New user, just getting started!',
-        goals: [],
-        avatarUrl: predefinedAvatars[4], // A generic avatar
-        bio: 'Exploring oral biohacking.',
-        phone: 'N/A',
-        gender: 'Other',
-        dateOfBirth: 'N/A',
-        height: 0,
-        weight: 0,
-        bloodType: 'N/A',
-        dietaryRestrictions: 'N/A',
-        allergies: 'N/A',
-        medications: 'N/A',
-        doctorName: 'N/A',
-    };
-    
-    setCurrentUser(newUser);
-    setIsOnboarding(true);
-    return { success: true };
-}, []);
-
-const handleEmailSignIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const usersDB = StorageService.getUsersDB();
-    const user = Object.values(usersDB).find(u => u.email.toLowerCase() === email.toLowerCase() && !u.authProviderId);
-
-    if (user) {
-        if (user.password === password) {
-            setCurrentUser(user);
-            StorageService.setCurrentUserId(user.id);
-            setIsOnboarding(false);
-            return { success: true };
+    const handleAuthentication = useCallback((token: string, user: UserProfile) => {
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        if (!user.salivaPH || !user.geneticRisk) {
+             setIsOnboarding(true);
         } else {
-            return { success: false, error: 'Incorrect password.' };
+             setIsOnboarding(false);
         }
-    } else {
-        return { success: false, error: 'No account found with that email, or it was created with Google Sign-In.' };
-    }
-}, []);
+        setCurrentUser(user);
+    }, []);
 
+    const handleGoogleLogin = useCallback(async (response: GoogleCredentialResponse) => {
+        if (!response.credential) throw new Error("Google login failed.");
+        const { token, user } = await api.exchangeGoogleCredential(response.credential);
+        handleAuthentication(token, user);
+    }, [handleAuthentication]);
 
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    setIsOnboarding(false);
-    StorageService.removeCurrentUserId();
-  }, []);
+    const handleEmailSignUp = useCallback(async (email: string, password: string) => {
+        const { token, user } = await api.signUpWithEmail(email, password);
+        handleAuthentication(token, user);
+    }, [handleAuthentication]);
 
-  const completeOnboarding = useCallback((updatedProfileData: Partial<UserProfile>) => {
-    setCurrentUser(prevUser => {
-      if (!prevUser) return null;
+    const handleEmailSignIn = useCallback(async (email: string, password: string) => {
+        const { token, user } = await api.signInWithEmail(email, password);
+        handleAuthentication(token, user);
+    }, [handleAuthentication]);
+    
+    const handleGuestLogin = useCallback(() => {
+        setCurrentUser(GUEST_PROFILE);
+        setIsOnboarding(false);
+    }, []);
 
-      const completeProfile: UserProfile = {
-        ...prevUser,
-        ...updatedProfileData,
-      };
+    const logout = useCallback(() => {
+        setCurrentUser(null);
+        setIsOnboarding(false);
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        // Here you might also call a backend logout endpoint
+    }, []);
 
-      const usersDB = StorageService.getUsersDB();
-      usersDB[completeProfile.id] = completeProfile;
-      StorageService.saveUsersDB(usersDB);
-      StorageService.setCurrentUserId(completeProfile.id);
+    const completeOnboarding = useCallback(async (updatedProfileData: Partial<UserProfile>) => {
+        if (!currentUser) return;
+        const profileToUpdate = { ...currentUser, ...updatedProfileData };
+        try {
+            const { user: updatedUser } = await api.updateUserProfile(profileToUpdate);
+            setCurrentUser(updatedUser);
+            setIsOnboarding(false);
+        } catch (error) {
+            console.error("Failed to save onboarding data:", error);
+            // Optionally show an error to the user
+        }
+    }, [currentUser]);
 
-      setIsOnboarding(false);
-      return completeProfile;
-    });
-  }, []);
-
-  return {
-    isLoading,
-    currentUser,
-    isOnboarding,
-    handleGuestLogin,
-    handleGoogleLogin,
-    handleEmailSignUp,
-    handleEmailSignIn,
-    logout,
-    completeOnboarding,
-  };
+    return {
+        isLoading,
+        currentUser,
+        isOnboarding,
+        handleGuestLogin,
+        handleGoogleLogin,
+        handleEmailSignUp,
+        handleEmailSignIn,
+        logout,
+        completeOnboarding,
+    };
 };
 
 const useProfileData = (currentUser: UserProfile | null) => {
-  const [profilesData, setProfilesData] = useState<Record<string, ProfileData>>(() =>
-    StorageService.getProfilesDataDB()
-  );
+    const [profileData, setProfileData] = useState<ProfileData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    StorageService.saveProfilesDataDB(profilesData);
-  }, [profilesData]);
+    useEffect(() => {
+        const loadData = async () => {
+            if (currentUser && currentUser.id !== 'guest') {
+                setIsLoading(true);
+                try {
+                    const data = await api.fetchProfileData();
+                    setProfileData(data);
+                } catch (error) {
+                    console.error("Failed to fetch profile data:", error);
+                    setProfileData(null); // Or set to a default error state
+                } finally {
+                    setIsLoading(false);
+                }
+            } else if (currentUser?.id === 'guest') {
+                setProfileData(GUEST_PROFILE_DATA);
+                setIsLoading(false);
+            } else {
+                setProfileData(null);
+                setIsLoading(false);
+            }
+        };
+        loadData();
+    }, [currentUser]);
 
-  const getActiveProfileData = useCallback((): ProfileData => {
-    if (!currentUser) return createDefaultProfileData();
-    return profilesData[currentUser.id] ?? createDefaultProfileData();
-  }, [currentUser, profilesData]);
+    const updateProfileData = useCallback((data: Partial<ProfileData>) => {
+        if (!currentUser || currentUser.id === 'guest') return;
+        
+        setProfileData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev, ...data };
+            // Here you would also call an API to persist the changes to the backend
+            // e.g., api.updateProfileData(newData);
+            return newData;
+        });
+    }, [currentUser]);
 
-  const updateActiveProfileData = useCallback(
-    (data: Partial<ProfileData>) => {
-      if (!currentUser) return;
-      
-      setProfilesData(prev => ({
-        ...prev,
-        [currentUser.id]: {
-          ...getActiveProfileData(),
-          ...data,
-        },
-      }));
-    },
-    [currentUser, getActiveProfileData]
-  );
-
-  return {
-    activeProfileData: getActiveProfileData(),
-    updateActiveProfileData,
-  };
+    return { profileData, isLoading, updateProfileData };
 };
 
 // ==================== MAIN APP COMPONENT ====================
@@ -504,7 +319,7 @@ const useProfileData = (currentUser: UserProfile | null) => {
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { 
-    isLoading, 
+    isLoading: isAuthLoading, 
     currentUser, 
     isOnboarding, 
     handleGuestLogin, 
@@ -514,36 +329,42 @@ export const App: React.FC = () => {
     logout, 
     completeOnboarding 
   } = useAuth();
-  const { activeProfileData, updateActiveProfileData } = useProfileData(currentUser);
+  const { profileData, isLoading: isDataLoading, updateProfileData } = useProfileData(currentUser);
   
   const [page, setPage] = useState<Page>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  const activeProfileData = useMemo(() => {
+    if (currentUser?.id === 'guest') return GUEST_PROFILE_DATA;
+    return profileData;
+  }, [currentUser, profileData]);
+
 
   const handleGeneratePlan = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser || currentUser.id === 'guest') return;
     
-    updateActiveProfileData({ isPlanLoading: true, planError: null });
+    updateProfileData({ isPlanLoading: true, planError: null });
     
     try {
-      const generatedPlan = await generatePersonalizedPlan(currentUser);
-      updateActiveProfileData({ plan: generatedPlan });
+      const { plan } = await api.generatePlan();
+      updateProfileData({ plan });
     } catch (err) {
-      updateActiveProfileData({
-        planError: 'Failed to generate plan. Please check your API key and try again.',
-      });
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      updateProfileData({ planError: `Failed to generate plan. ${errorMessage}` });
       console.error('Plan generation error:', err);
     } finally {
-      updateActiveProfileData({ isPlanLoading: false });
+      updateProfileData({ isPlanLoading: false });
     }
-  }, [currentUser, updateActiveProfileData]);
+  }, [currentUser, updateProfileData]);
 
   const handleToggleHabit = useCallback(
-    (habitId: string) => {
-      if (!currentUser) return;
+    async (habitId: string) => {
+      if (!currentUser || !activeProfileData) return;
 
       const today = getDateString(new Date());
-      const newHistory = { ...activeProfileData.habitHistory };
-      const todaysCompletions = newHistory[today] ? [...newHistory[today]] : [];
+      // Optimistically update UI
+      const originalHistory = activeProfileData.habitHistory;
+      const todaysCompletions = originalHistory[today] ? [...originalHistory[today]] : [];
       const habitIndex = todaysCompletions.indexOf(habitId);
 
       if (habitIndex > -1) {
@@ -551,16 +372,27 @@ export const App: React.FC = () => {
       } else {
         todaysCompletions.push(habitId);
       }
-
+      
+      const newHistory = { ...originalHistory };
       if (todaysCompletions.length > 0) {
         newHistory[today] = todaysCompletions;
       } else {
         delete newHistory[today];
       }
 
-      updateActiveProfileData({ habitHistory: newHistory });
+      updateProfileData({ habitHistory: newHistory });
+
+      // Call API
+      try {
+        await api.toggleHabit(habitId, today);
+      } catch (error) {
+        console.error("Failed to update habit:", error);
+        // Revert UI on failure
+        updateProfileData({ habitHistory: originalHistory });
+        // Optionally show an error toast
+      }
     },
-    [currentUser, activeProfileData.habitHistory, updateActiveProfileData]
+    [currentUser, activeProfileData, updateProfileData]
   );
 
   const handleNavigate = useCallback((newPage: Page) => {
@@ -569,52 +401,51 @@ export const App: React.FC = () => {
   }, []);
 
   const handleUpdateProfile = useCallback(
-    (updatedProfile: UserProfile) => {
+    async (updatedProfile: UserProfile) => {
       if (!currentUser || updatedProfile.id === 'guest') return;
-
-      const usersDB = StorageService.getUsersDB();
-      usersDB[updatedProfile.id] = updatedProfile;
-      StorageService.saveUsersDB(usersDB);
+      try {
+        await api.updateUserProfile(updatedProfile);
+      } catch (error) {
+        console.error("Failed to update profile:", error);
+      }
     },
     [currentUser]
   );
+  
+  const handleUpdateGoals = useCallback(async (goals: Goal[]) => {
+      if (!currentUser || !activeProfileData) return;
+      const originalGoals = currentUser.goals;
+      handleUpdateProfile({ ...currentUser, goals });
 
-  const handleExportData = useCallback(() => {
-    if (!currentUser) return;
+      try {
+          await api.updateGoals(goals);
+      } catch (error) {
+          console.error("Failed to update goals:", error);
+          handleUpdateProfile({ ...currentUser, goals: originalGoals }); // Revert
+      }
+  }, [currentUser, activeProfileData, handleUpdateProfile]);
 
-    const userData = {
-      profile: currentUser,
-      data: activeProfileData,
-    };
-
-    const dataStr = JSON.stringify(userData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `oralBioAI_data_${currentUser.id}_${getDateString(new Date())}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [currentUser, activeProfileData]);
-
-  const handleDeleteAccount = useCallback(() => {
+  const handleExportData = useCallback(async () => {
     if (!currentUser || currentUser.id === 'guest') return;
+    try {
+        await api.exportUserData();
+    } catch (error) {
+        console.error("Failed to export data:", error);
+    }
+  }, [currentUser]);
 
-    const usersDB = StorageService.getUsersDB();
-    delete usersDB[currentUser.id];
-    StorageService.saveUsersDB(usersDB);
-
-    const profilesDataDB = StorageService.getProfilesDataDB();
-    delete profilesDataDB[currentUser.id];
-    StorageService.saveProfilesDataDB(profilesDataDB);
-
-    logout();
+  const handleDeleteAccount = useCallback(async () => {
+    if (!currentUser || currentUser.id === 'guest') return;
+     try {
+        await api.deleteUserAccount();
+        logout();
+    } catch (error) {
+        console.error("Failed to delete account:", error);
+    }
   }, [currentUser, logout]);
 
   const renderPage = useCallback(() => {
+    if (!activeProfileData) return null;
     const pageContainerClass = 'p-4 sm:p-6 lg:p-8';
 
     switch (page) {
@@ -652,6 +483,7 @@ export const App: React.FC = () => {
           <UserProfilePage
             profile={currentUser!}
             onUpdateProfile={handleUpdateProfile}
+            onUpdateGoals={handleUpdateGoals}
             theme={theme}
             onToggleTheme={toggleTheme}
             onExportData={handleExportData}
@@ -675,7 +507,7 @@ export const App: React.FC = () => {
                   typeof updater === 'function'
                     ? updater(activeProfileData.symptomCheckerState)
                     : updater;
-                updateActiveProfileData({ symptomCheckerState: newState });
+                updateProfileData({ symptomCheckerState: newState });
               }}
             />
           </div>
@@ -698,16 +530,18 @@ export const App: React.FC = () => {
     activeProfileData,
     handleGeneratePlan,
     handleUpdateProfile,
+    handleUpdateGoals,
     handleNavigate,
     handleToggleHabit,
     theme,
     toggleTheme,
     handleExportData,
     handleDeleteAccount,
+    updateProfileData
   ]);
 
   // Loading state
-  if (isLoading) {
+  if (isAuthLoading || (currentUser && currentUser.id !== 'guest' && isDataLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-900">
         <Spinner />
@@ -717,11 +551,18 @@ export const App: React.FC = () => {
 
   // Unauthenticated state
   if (!currentUser) {
+    const handleAuthAction = async (action: Promise<any>) => {
+        try {
+            await action;
+        } catch (error) {
+            throw error; // Re-throw to be caught by Login component's handler
+        }
+    };
     return <Login 
-        onGoogleLogin={handleGoogleLogin} 
+        onGoogleLogin={(res) => handleAuthAction(handleGoogleLogin(res))}
         onGuestLogin={handleGuestLogin} 
-        onEmailSignUp={handleEmailSignUp}
-        onEmailSignIn={handleEmailSignIn}
+        onEmailSignUp={(email, pass) => handleAuthAction(handleEmailSignUp(email, pass))}
+        onEmailSignIn={(email, pass) => handleAuthAction(handleEmailSignIn(email, pass))}
         theme={theme} 
     />;
   }

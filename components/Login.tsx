@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleCredentialResponse } from '../types';
 import { Spinner } from './common/Spinner';
-import { predefinedAvatars } from '../data/predefinedAvatars';
 
 interface LoginProps {
-  onGoogleLogin: (response: GoogleCredentialResponse) => void;
+  onGoogleLogin: (response: GoogleCredentialResponse) => Promise<void>;
   onGuestLogin: () => void;
-  onEmailSignUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  onEmailSignIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  onEmailSignUp: (email: string, password: string) => Promise<void>;
+  onEmailSignIn: (email: string, password: string) => Promise<void>;
   theme: 'light' | 'dark';
 }
 
@@ -42,30 +41,41 @@ const Login: React.FC<LoginProps> = ({ onGoogleLogin, onGuestLogin, onEmailSignU
   
   const isGoogleSignInAvailable = !!GOOGLE_CLIENT_ID;
 
+  const handleGoogleLogin = async (response: GoogleCredentialResponse) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        await onGoogleLogin(response);
+    } catch(err) {
+        setError(err instanceof Error ? err.message : 'Google login failed.');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isGoogleSignInAvailable) {
-      return;
+    if (!isGoogleSignInAvailable || !window.google?.accounts?.id) {
+        if (isGoogleSignInAvailable) console.warn("Google Identity Services script not loaded yet.");
+        return;
     }
 
-    if (window.google?.accounts?.id && googleButtonContainerRef.current) {
+    if (googleButtonContainerRef.current) {
         try {
             setGoogleInitError(null);
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: onGoogleLogin
+                callback: handleGoogleLogin
             });
             window.google.accounts.id.renderButton(
                 googleButtonContainerRef.current,
                 { theme: theme === 'dark' ? 'filled_black' : 'outline', size: "large", type: "standard", text: isSignUp ? 'signup_with' : 'signin_with', width: '300' } 
             );
-        } catch (error) {
-            console.error("Google Sign-In initialization error:", error);
+        } catch (err) {
+            console.error("Google Sign-In initialization error:", err);
             setGoogleInitError("Failed to load Google Sign-In.");
         }
-    } else {
-        console.warn("Google Identity Services script not loaded yet.");
     }
-  }, [isSignUp, theme, onGoogleLogin, isGoogleSignInAvailable]);
+  }, [isSignUp, theme, isGoogleSignInAvailable]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,33 +86,30 @@ const Login: React.FC<LoginProps> = ({ onGoogleLogin, onGuestLogin, onEmailSignU
         return;
     }
 
-    if (isSignUp) {
-        if (password.length < 6) {
-             setError("Password must be at least 6 characters long.");
-             return;
+    setIsLoading(true);
+    try {
+        if (isSignUp) {
+            if (password.length < 6) {
+                 setError("Password must be at least 6 characters long.");
+                 return;
+            }
+            if (password !== confirmPassword) {
+                setError("Passwords do not match.");
+                return;
+            }
+            await onEmailSignUp(email, password);
+        } else {
+            if (!password) {
+                setError("Please enter your password.");
+                 return;
+            }
+            await onEmailSignIn(email, password);
         }
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
-        }
-        setIsLoading(true);
-        const result = await onEmailSignUp(email, password);
-        if (result.error) {
-            setError(result.error);
-        }
-        // On success, the App component will handle navigation via state change
-    } else {
-        if (!password) {
-            setError("Please enter your password.");
-             return;
-        }
-        setIsLoading(true);
-        const result = await onEmailSignIn(email, password);
-        if (result.error) {
-            setError(result.error);
-        }
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
 

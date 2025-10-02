@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from './common/Card';
 import { Spinner } from './common/Spinner';
-import { designPerfectSmile } from '../services/geminiService';
+import { generateSmileDesign } from '../services/apiService';
 import { SmileDesignResult } from '../types';
 
 const SmileIcon = () => (
@@ -134,7 +134,11 @@ const SmileDesignStudio: React.FC = () => {
         try {
             // Data URL is "data:[mime];base64,[data]", we need to extract [data]
             const base64Data = originalImage.split(',')[1];
-            const result = await designPerfectSmile(base64Data, originalMimeType);
+            const result = await generateSmileDesign(base64Data, originalMimeType);
+            
+            if (!result.image) {
+              throw new Error("The AI did not return an image. It might have said: " + (result.text || "No reason given."));
+            }
             setGeneratedResult(result);
         } catch (err) {
             setError(err instanceof Error ? err.message : "An unknown error occurred.");

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { UserProfile, Goal } from '../types';
 import AvatarSelectionModal from './AvatarSelectionModal';
@@ -6,6 +5,7 @@ import AvatarSelectionModal from './AvatarSelectionModal';
 interface UserProfilePageProps {
   profile: UserProfile;
   onUpdateProfile: (profile: UserProfile) => void;
+  onUpdateGoals: (goals: Goal[]) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onExportData: () => void;
@@ -13,7 +13,7 @@ interface UserProfilePageProps {
 }
 
 
-const GoalManager: React.FC<{ profile: UserProfile, onUpdateProfile: (profile: UserProfile) => void }> = ({ profile, onUpdateProfile }) => {
+const GoalManager: React.FC<{ profile: UserProfile, onUpdateGoals: (goals: Goal[]) => void }> = ({ profile, onUpdateGoals }) => {
     const [newGoalText, setNewGoalText] = useState('');
 
     const handleAddGoal = (e: React.FormEvent) => {
@@ -24,8 +24,8 @@ const GoalManager: React.FC<{ profile: UserProfile, onUpdateProfile: (profile: U
             text: newGoalText.trim(),
             isCompleted: false,
         };
-        const updatedProfile = { ...profile, goals: [...profile.goals, newGoal] };
-        onUpdateProfile(updatedProfile);
+        const updatedGoals = [...profile.goals, newGoal];
+        onUpdateGoals(updatedGoals);
         setNewGoalText('');
     };
 
@@ -33,12 +33,12 @@ const GoalManager: React.FC<{ profile: UserProfile, onUpdateProfile: (profile: U
         const updatedGoals = profile.goals.map(g =>
             g.id === goalId ? { ...g, isCompleted: !g.isCompleted } : g
         );
-        onUpdateProfile({ ...profile, goals: updatedGoals });
+        onUpdateGoals(updatedGoals);
     };
 
     const handleDeleteGoal = (goalId: string) => {
         const updatedGoals = profile.goals.filter(g => g.id !== goalId);
-        onUpdateProfile({ ...profile, goals: updatedGoals });
+        onUpdateGoals(updatedGoals);
     };
     
     const activeGoals = profile.goals.filter(g => !g.isCompleted);
@@ -102,7 +102,7 @@ const GoalItem: React.FC<{ goal: Goal, onToggle: (id: string) => void, onDelete:
 );
 
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile, theme, onToggleTheme, onExportData, onDeleteAccount }) => {
+const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProfile, onUpdateGoals, theme, onToggleTheme, onExportData, onDeleteAccount }) => {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +138,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
     };
     
     const handleDeleteAccountConfirmed = () => {
-        if (window.confirm("Are you sure you want to delete your account? This will permanently erase all your data from this device. This action cannot be undone.")) {
+        if (window.confirm("Are you sure you want to delete your account? This will permanently erase all your data. This action cannot be undone.")) {
             onDeleteAccount();
         }
     };
@@ -168,7 +168,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                             </button>
                         </div>
                     </div>
-                    <GoalManager profile={profile} onUpdateProfile={onUpdateProfile} />
+                    <GoalManager profile={profile} onUpdateGoals={onUpdateGoals} />
                 </div>
                 
                 {/* Right Column */}
@@ -218,7 +218,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ profile, onUpdateProf
                         <div>
                             <h3 className="text-gray-900 dark:text-gray-50 text-lg font-bold leading-tight tracking-[-0.015em] mb-3">Data & Privacy</h3>
                             <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden p-4 space-y-3">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Your data is stored only on this device. You can export a copy or delete it permanently.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Your data is managed by our secure backend. You can export a copy or delete it permanently.</p>
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <button onClick={onExportData} className="flex-1 text-center py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-gray-200 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
                                         <span className="material-symbols-outlined text-xl">download</span>
