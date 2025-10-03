@@ -79,6 +79,11 @@ export interface GroundingChunk {
     }
 }
 
+export interface EducationalContentResult {
+  text: string;
+  sources: GroundingChunk[];
+}
+
 export interface SmileDesignResult {
     image: string | null; // base64 string
     text: string | null;
