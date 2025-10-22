@@ -25,7 +25,7 @@ const sizeStyles: Record<SpinnerSize, { spinner: string; text: string }> = {
 };
 
 const variantStyles: Record<SpinnerVariant, string> = {
-  primary: 'border-blue-600 dark:border-cyan-400 border-t-transparent',
+  primary: 'border-primary border-t-transparent',
   secondary: 'border-gray-600 dark:border-gray-400 border-t-transparent',
   success: 'border-green-600 dark:border-green-400 border-t-transparent',
   warning: 'border-yellow-600 dark:border-yellow-400 border-t-transparent',
@@ -68,7 +68,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
 
   if (fullScreen) {
     return (
-      <div className={`${fullScreenOrOverlayClasses} bg-slate-900 flex-col gap-4`}>
+      <div className={`${fullScreenOrOverlayClasses} bg-background-dark flex-col gap-4`}>
         {spinnerElement}
         {label && <p className={`font-semibold text-white ${sizeStyles[size].text}`}>{label}</p>}
       </div>
@@ -88,7 +88,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
     return (
       <div className="flex flex-col items-center justify-center gap-2">
         {spinnerElement}
-        <p className={`font-medium text-gray-700 dark:text-gray-300 ${sizeStyles[size].text}`}>{label}</p>
+        <p className={`font-medium text-subtle-light dark:text-subtle-dark ${sizeStyles[size].text}`}>{label}</p>
       </div>
     );
   }

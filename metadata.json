@@ -3,6 +3,7 @@
   "description": "An AI-powered health dashboard providing personalized oral biohacking plans, habit coaching, and a symptom checker tailored to your unique biometrics.",
   "requestFramePermissions": [
     "geolocation",
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

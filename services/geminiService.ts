@@ -7,9 +7,10 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 export const generateEducationalContent = async (topic: string): Promise<EducationalContentResult> => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
       contents: `Explain the following oral health topic in a clear, concise, and informative way suitable for a patient. Provide actionable advice where possible. Topic: "${topic}"`,
       config: {
+        thinkingConfig: { thinkingBudget: 32768 },
         tools: [{googleSearch: {}}],
         systemInstruction: "You are an AI assistant for an oral health application. Your goal is to provide accurate, safe, and easy-to-understand educational content. Always base your answers on the provided search results. Do not provide medical advice, and include a disclaimer that the user should consult a dental professional for personal health concerns."
       },

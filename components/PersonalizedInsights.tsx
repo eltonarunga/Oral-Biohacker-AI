@@ -85,28 +85,28 @@ const generateInsights = (profile: UserProfile, habitHistory: Record<string, str
 const InsightCard: React.FC<{ insight: Insight }> = ({ insight }) => {
     const colorClasses = {
         blue: {
-            container: 'bg-blue-100 dark:bg-blue-900/50',
-            icon: 'text-blue-600 dark:text-blue-400',
-            title: 'text-blue-900 dark:text-blue-200',
-            description: 'text-blue-700 dark:text-blue-300',
+            container: 'bg-primary/10 border-primary',
+            icon: 'text-primary',
+            title: 'text-foreground-light dark:text-foreground-dark',
+            description: 'text-subtle-light dark:text-subtle-dark',
         },
         yellow: {
-            container: 'bg-yellow-100 dark:bg-yellow-900/50',
+            container: 'bg-yellow-500/10 border-yellow-500',
             icon: 'text-yellow-600 dark:text-yellow-400',
-            title: 'text-yellow-900 dark:text-yellow-200',
-            description: 'text-yellow-700 dark:text-yellow-300',
+            title: 'text-foreground-light dark:text-foreground-dark',
+            description: 'text-subtle-light dark:text-subtle-dark',
         },
         red: {
-            container: 'bg-red-100 dark:bg-red-900/50',
+            container: 'bg-red-500/10 border-red-500',
             icon: 'text-red-600 dark:text-red-400',
-            title: 'text-red-900 dark:text-red-200',
-            description: 'text-red-700 dark:text-red-300',
+            title: 'text-foreground-light dark:text-foreground-dark',
+            description: 'text-subtle-light dark:text-subtle-dark',
         },
     };
     const theme = colorClasses[insight.color];
 
     return (
-        <div className={`p-4 rounded-xl flex items-start gap-4 ${theme.container}`}>
+        <div className={`p-4 rounded-xl flex items-start gap-4 border-l-4 ${theme.container}`}>
             <div className={`flex-shrink-0 mt-0.5 ${theme.icon}`}>
                 <span className="material-symbols-outlined">{insight.icon}</span>
             </div>
@@ -127,8 +127,8 @@ const PersonalizedInsights: React.FC<PersonalizedInsightsProps> = ({ profile, ha
     }
 
     return (
-        <div className="px-4 pt-4 pb-1">
-            <h2 className="text-gray-900 dark:text-gray-50 text-xl font-bold leading-tight tracking-[-0.015em] mb-3">AI-Powered Insights</h2>
+        <div>
+            <h2 className="text-foreground-light dark:text-foreground-dark text-xl font-bold mb-3">AI-Powered Insights</h2>
             <div className="space-y-3">
                 {insights.map((insight, index) => (
                     <InsightCard key={index} insight={insight} />

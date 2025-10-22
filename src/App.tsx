@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -35,6 +38,7 @@ import { generatePersonalizedPlan, analyzeDietLog } from './services/apiService'
 import { getDateString } from './utils/habits';
 
 // Error Boundary Component
+// FIX: Define interfaces for props and state for better type safety and to resolve potential type inference issues.
 interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
@@ -46,7 +50,7 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Added constructor to properly initialize state and handle props. This resolves errors related to `this.state` and `this.props` being undefined, which also fixes downstream type errors about missing 'children' props.
+  // FIX: Corrected an issue where `this.props` was not available in the `ErrorBoundary` component. Using a constructor to call `super(props)` and initialize state ensures the component's `props` are set up correctly.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -64,9 +68,11 @@ class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-background-light dark:bg-background-dark">
-          <div className="glass-card p-8 rounded-xl max-w-md">
+          <div className="bg-input-light dark:bg-input-dark p-8 rounded-lg shadow-lg max-w-md">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-4">
-              <span className="material-symbols-outlined text-2xl">error</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               <h2 className="text-xl font-bold">Something went wrong</h2>
             </div>
             <p className="text-subtle-light dark:text-subtle-dark mb-4">
@@ -225,6 +231,7 @@ export const App: React.FC = () => {
             case 'education': return <EducationalContent />;
             case 'find-dentist': return <FindDentist />;
             case 'smile-design-studio': return <SmileDesignStudio />;
+            // FIX: The `HabitHistory` component requires an `onNavigate` prop for its "Manage Habits" button to function correctly. This adds the missing prop.
             case 'habit-history': return <HabitHistory habits={habits} habitHistory={habitHistory} onNavigate={handleNavigate} />;
             case 'habit-management': return <HabitManagement habits={habits} onAddHabit={handleAddHabit} onUpdateHabit={handleUpdateHabit} onDeleteHabit={handleDeleteHabit} />;
             case 'profile': return <UserProfilePage profile={user} habits={habits} habitHistory={habitHistory} dailyDietLog={dailyDietLog} onUpdateProfile={handleUpdateProfile} onUpdateGoals={handleUpdateGoals} theme={theme} onToggleTheme={handleToggleTheme} onDeleteAccount={() => { if (window.confirm('Are you sure?')) handleLogout(); }} />;
@@ -244,7 +251,7 @@ export const App: React.FC = () => {
 
     return (
         <ErrorBoundary>
-            <div className="flex h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
+            <div className="flex h-screen bg-background-light dark:bg-background-dark">
                 <Sidebar currentPage={page} onNavigate={handleNavigate} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} onLogout={handleLogout} />
                 <div className="flex flex-1 flex-col overflow-hidden relative">
                     <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} />
@@ -253,8 +260,8 @@ export const App: React.FC = () => {
                     </main>
                     <Chatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
                     {!isChatOpen && (
-                         <button onClick={() => setIsChatOpen(true)} className="fixed bottom-20 right-6 lg:bottom-6 z-30 bg-primary text-white rounded-full size-16 flex items-center justify-center shadow-lg hover:scale-110 transition-transform animate-glow" aria-label="Open AI Chat">
-                            <span className="material-symbols-outlined text-3xl" style={{fontVariationSettings: "'FILL' 1"}}>smart_toy</span>
+                         <button onClick={() => setIsChatOpen(true)} className="fixed bottom-20 right-4 z-30 bg-primary text-white rounded-full size-16 flex items-center justify-center shadow-lg hover:scale-110 transition-transform" aria-label="Open AI Chat">
+                            <span className="material-symbols-outlined text-3xl">smart_toy</span>
                         </button>
                     )}
                 </div>

@@ -157,17 +157,17 @@ const SmileDesignStudio: React.FC = () => {
             <Card title="Smile Design Studio" icon={<SmileIcon />}>
                 {/* Step 1: Initial Upload State */}
                 {!originalImage && !isLoading && (
-                     <div className="text-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                        <span className="material-symbols-outlined text-5xl text-gray-400 mx-auto">add_a_photo</span>
-                        <h3 className="mt-4 text-lg font-bold text-gray-800 dark:text-gray-200">Step 1: Provide Your Smile</h3>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">For best results, use a clear, front-facing photo where your teeth are visible.</p>
+                     <div className="text-center p-8 border-2 border-dashed border-subtle-light/40 dark:border-subtle-dark/40 rounded-lg">
+                        <span className="material-symbols-outlined text-5xl text-subtle-light dark:text-subtle-dark mx-auto">add_a_photo</span>
+                        <h3 className="mt-4 text-lg font-bold text-foreground-light dark:text-foreground-dark">Step 1: Provide Your Smile</h3>
+                        <p className="mt-1 text-sm text-subtle-light dark:text-subtle-dark">For best results, use a clear, front-facing photo where your teeth are visible.</p>
                         <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
                              <input type="file" accept="image/png, image/jpeg" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-                             <button onClick={triggerFileSelect} className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                             <button onClick={triggerFileSelect} className="bg-primary hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                                 <span className="material-symbols-outlined">upload_file</span>
                                 Select Image
                             </button>
-                             <button onClick={handleTakePhotoClick} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                             <button onClick={handleTakePhotoClick} className="bg-input-dark hover:bg-subtle-dark text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                                 <span className="material-symbols-outlined">photo_camera</span>
                                 Take Photo
                             </button>
@@ -180,16 +180,16 @@ const SmileDesignStudio: React.FC = () => {
                 {originalImage && !generatedResult && !isLoading && (
                     <div className="space-y-6 text-center">
                         <div>
-                            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Step 2: Ready to Redesign?</h3>
-                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">This is the image our AI will work with.</p>
+                            <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">Step 2: Ready to Redesign?</h3>
+                            <p className="mt-1 text-sm text-subtle-light dark:text-subtle-dark">This is the image our AI will work with.</p>
                         </div>
                         <img src={originalImage} alt="Your selected smile" className="rounded-lg shadow-md w-full object-contain max-h-80 mx-auto" />
                         {error && <p className="text-red-700 dark:text-red-300 text-center bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button onClick={handleDesignClick} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={handleDesignClick} className="flex-1 bg-primary hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                 ✨ Generate AI-Enhanced Smile
                             </button>
-                            <button onClick={resetState} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-slate-600 dark:hover:bg-slate-500 dark:text-gray-200 font-bold py-3 px-4 rounded-lg transition duration-200">
+                            <button onClick={resetState} className="flex-1 bg-subtle-light/20 hover:bg-subtle-light/30 text-foreground-light dark:bg-subtle-dark/20 dark:hover:bg-subtle-dark/30 dark:text-foreground-dark font-bold py-3 px-4 rounded-lg transition duration-200">
                                 Change Photo
                             </button>
                         </div>
@@ -200,8 +200,8 @@ const SmileDesignStudio: React.FC = () => {
                 {isLoading && (
                     <div className="text-center p-8 flex flex-col items-center justify-center min-h-[300px]">
                         <Spinner />
-                        <h3 className="mt-4 text-lg font-bold text-gray-800 dark:text-gray-200">Designing Your Smile...</h3>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-500">{loadingMessage}</p>
+                        <h3 className="mt-4 text-lg font-bold text-foreground-light dark:text-foreground-dark">Designing Your Smile...</h3>
+                        <p className="mt-1 text-sm text-subtle-light dark:text-subtle-dark transition-opacity duration-500">{loadingMessage}</p>
                     </div>
                 )}
                 
@@ -209,30 +209,30 @@ const SmileDesignStudio: React.FC = () => {
                 {(generatedResult || (error && originalImage)) && !isLoading && (
                      <div className="space-y-6">
                         <div className="text-center">
-                            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Step 3: Your Results</h3>
-                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Compare your original smile with the AI-enhanced version.</p>
+                            <h3 className="text-xl font-bold text-foreground-light dark:text-foreground-dark">Step 3: Your Results</h3>
+                            <p className="mt-1 text-sm text-subtle-light dark:text-subtle-dark">Compare your original smile with the AI-enhanced version.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                             <div>
-                                <h3 className="text-lg font-semibold text-center mb-2 text-gray-600 dark:text-gray-400">Your Original Smile</h3>
+                                <h3 className="text-lg font-semibold text-center mb-2 text-subtle-light dark:text-subtle-dark">Your Original Smile</h3>
                                 <img src={originalImage!} alt="User's smile" className="rounded-lg shadow-md w-full object-contain max-h-80" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-center mb-2 text-blue-600 dark:text-blue-400">AI-Enhanced Smile</h3>
-                                <div className="bg-gray-100 dark:bg-slate-700 rounded-lg shadow-md w-full min-h-[200px] flex items-center justify-center aspect-square max-h-80 mx-auto">
+                                <h3 className="text-lg font-semibold text-center mb-2 text-primary">AI-Enhanced Smile</h3>
+                                <div className="bg-background-light dark:bg-input-dark/50 rounded-lg shadow-md w-full min-h-[200px] flex items-center justify-center aspect-square max-h-80 mx-auto">
                                     {generatedResult?.image ? (
                                         <img src={`data:image/png;base64,${generatedResult.image}`} alt="AI generated smile" className="rounded-lg w-full object-contain max-h-80" />
                                     ) : (
                                          <div className="text-center p-4">
                                             <span className="material-symbols-outlined text-5xl text-red-500">error</span>
                                             <p className="text-red-500 mt-2 font-semibold">Could not generate image</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{error}</p>
+                                            <p className="text-xs text-subtle-light dark:text-subtle-dark mt-1">{error}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                         <button onClick={resetState} className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                         <button onClick={resetState} className="w-full bg-primary hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
                             Start Over
                         </button>
                     </div>
@@ -244,10 +244,10 @@ const SmileDesignStudio: React.FC = () => {
                 <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true">
                     <video ref={videoRef} autoPlay playsInline className="w-full max-w-lg rounded-lg mb-4 h-auto aspect-[4/3] object-cover bg-black"></video>
                     <div className="flex gap-4">
-                        <button onClick={handleCapture} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-full transition duration-200 flex items-center gap-2">
+                        <button onClick={handleCapture} className="bg-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-full transition duration-200 flex items-center gap-2">
                             <span className="material-symbols-outlined">radio_button_checked</span> Capture
                         </button>
-                        <button onClick={closeCamera} className="bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-full transition duration-200">
+                        <button onClick={closeCamera} className="bg-input-dark/80 hover:bg-input-dark text-white font-bold py-3 px-6 rounded-full transition duration-200">
                             Cancel
                         </button>
                     </div>

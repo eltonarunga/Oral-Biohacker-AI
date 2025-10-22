@@ -1,6 +1,46 @@
-import { type Chat } from "@google/genai";
 
-export type Page = 'dashboard' | 'plan' | 'symptom-checker' | 'education' | 'find-dentist' | 'smile-design-studio' | 'profile' | 'habit-history';
+// ==================== CORE TYPES ====================
+
+export type Page =
+  | 'dashboard'
+  | 'plan'
+  | 'symptom-checker'
+  | 'education'
+  | 'find-dentist'
+  | 'smile-design-studio'
+  | 'profile'
+  | 'habit-history'
+  | 'diet-log'
+  | 'habit-management'
+  | 'ai-assistant'
+  | 'image-generator'
+  | 'image-editor'
+  | 'image-analyzer'
+  | 'voice-notes';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  bio: string;
+  joinDate: string;
+  phone: string;
+  gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+  dateOfBirth: string; // YYYY-MM-DD
+  height: number; // in cm
+  weight: number; // in kg
+  bloodType: string;
+  dietaryRestrictions: string;
+  allergies: string;
+  medications: string;
+  doctorName: string;
+  salivaPH: number;
+  geneticRisk: 'Low' | 'Medium' | 'High';
+  bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';
+  lifestyle: string;
+  goals: Goal[];
+}
 
 export interface Goal {
   id: string;
@@ -8,62 +48,96 @@ export interface Goal {
   isCompleted: boolean;
 }
 
-export interface UserProfile {
+export interface Habit {
   id: string;
   name: string;
-  authProviderId?: string; // e.g., 'google-12345'
-  password?: string; // For email/password auth
-  salivaPH: number;
-  geneticRisk: 'Low' | 'Medium' | 'High';
-  bruxism: 'None' | 'Mild' | 'Moderate' | 'Severe';
-  lifestyle: string;
-  goals: Goal[];
-  // New fields for profile page
-  avatarUrl: string;
-  bio: string;
-  joinDate: string;
-  email: string;
-  phone: string;
-  gender: 'Female' | 'Male' | 'Other';
-  dateOfBirth: string;
-  height: number; // cm
-  weight: number; // kg
-  bloodType: string;
-  // New health fields
-  dietaryRestrictions: string;
-  allergies: string;
-  medications: string;
-  doctorName: string;
+  description: string;
+  time: string; // e.g., "Morning, before breakfast"
+  category: 'Clinically Proven' | 'Biohacking';
+  icon: string; // Material Symbols icon name
 }
+
+// ==================== FEATURE-SPECIFIC TYPES ====================
 
 export interface PersonalizedPlan {
   planRationale: string;
-  supplements: { name: string; dosage: string; reason: string; }[];
-  morningRoutines: { name: string; frequency: string; instructions: string; }[];
-  eveningRoutines: { name: string; frequency: string; instructions: string; }[];
-  nutrition: { recommendation: string; reason: string; }[];
-  alerts: { marker: string; status: 'Good' | 'Fair' | 'Poor'; advice: string; }[];
+  alerts: {
+    marker: string;
+    status: 'Good' | 'Fair' | 'Poor';
+    advice: string;
+  }[];
+  supplements: {
+    name: string;
+    dosage: string;
+    reason: string;
+  }[];
+  nutrition: {
+    recommendation: string;
+    reason: string;
+  }[];
+  morningRoutines: {
+    name: string;
+    frequency: string;
+    instructions: string;
+  }[];
+  eveningRoutines: {
+    name: string;
+    frequency: string;
+    instructions: string;
+  }[];
 }
 
-export interface ChatMessage {
-    role: 'user' | 'model';
-    text: string;
-    sources?: GroundingChunk[];
+export interface SymptomCheckResult {
+    possibleConditions: { name: string; likelihood: string }[];
+    triageLevel: 'Self-Care' | 'See a Dentist Soon' | 'Urgent Dental Care Recommended';
+    careRecommendations: string[];
+    disclaimer: string;
 }
 
-export interface SymptomCheckerState {
-    history: ChatMessage[];
-    isLoading: boolean;
-    suggestedReplies: string[];
+
+// ==================== DIET LOG TYPES ====================
+
+export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks';
+
+export interface MealLogItem {
+  id: string;
+  text: string;
 }
 
-export interface ProfileData {
-    plan: PersonalizedPlan | null;
-    isPlanLoading: boolean;
-    planError: string | null;
-    symptomCheckerState: SymptomCheckerState;
-    habits: Habit[];
-    habitHistory: Record<string, string[]>; // key is 'YYYY-MM-DD', value is array of completed habit IDs
+export interface DailyLog {
+    Breakfast?: MealLogItem[];
+    Lunch?: MealLogItem[];
+    Dinner?: MealLogItem[];
+    Snacks?: MealLogItem[];
+    analysis?: string | null;
+}
+
+export type DailyDietLog = Record<string, DailyLog>; // Key is date string 'YYYY-MM-DD'
+
+
+// ==================== API & SERVICE TYPES ====================
+
+export interface GroundingChunk {
+  web?: {
+    uri: string;
+    title: string;
+  };
+  maps?: {
+    uri: string;
+    title: string;
+    placeAnswerSources?: {
+        reviewSnippets: {
+            uri: string;
+            text: string;
+        }[];
+    }[];
+  };
+}
+
+
+export interface EducationalContentResult {
+  text: string;
+  sources: GroundingChunk[];
 }
 
 export interface Dentist {
@@ -72,32 +146,18 @@ export interface Dentist {
     phone: string;
 }
 
-export interface GroundingChunk {
-    web: {
-        uri: string;
-        title: string;
-    }
-}
-
-export interface EducationalContentResult {
-  text: string;
-  sources: GroundingChunk[];
+export interface DentistSearchResult {
+    dentists: Dentist[];
+    sources: GroundingChunk[];
 }
 
 export interface SmileDesignResult {
-    image: string | null; // base64 string
-    text: string | null;
+    image: string; // base64 encoded image
+    text: string;
 }
 
-export interface Habit {
-  id: string;
-  name: string;
-  time: 'Morning' | 'Evening';
-  icon: string; // Material Symbols icon name
-  category: 'Clinically Proven' | 'Biohacking';
-}
+// ==================== AUTH TYPES ====================
 
-// Represents the object returned by the Google Sign-In callback
 export interface GoogleCredentialResponse {
   credential?: string;
 }

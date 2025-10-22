@@ -1,196 +1,139 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { SymptomCheckerState, ChatMessage, GroundingChunk } from '../types';
-import { sendMessageToChecker } from '../services/apiService';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Card } from './common/Card';
+import { Spinner } from './common/Spinner';
+import { analyzeSymptoms } from '../services/apiService';
+import { SymptomCheckResult } from '../types';
+import { TTSButton } from './common/TTSButton';
 
-interface SymptomCheckerProps {
-    state: SymptomCheckerState;
-    setState: React.Dispatch<React.SetStateAction<SymptomCheckerState>>;
-}
-
-const FormattedMessage: React.FC<{ text: string }> = ({ text }) => {
-    // Safely parse bold markdown (**) into <strong> tags
-    const parseLineContent = (line: string) => {
-        const parts = line.split(/(\*\*.*?\*\*)/g).filter(Boolean);
-        return parts.map((part, index) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-                return <strong key={index}>{part.slice(2, -2)}</strong>;
-            }
-            return part; // React will escape this string
-        });
-    };
-
-    return (
-        <div className="text-slate-800 dark:text-slate-200 text-sm">
-            {text.split('\n').map((line, index) => {
-                // Check for markdown list items (* or -)
-                const listItemMatch = line.match(/^\s*[\*\-]\s(.*)/);
-                if (listItemMatch) {
-                    return (
-                        <div key={index} className="flex items-start">
-                            <span className="mr-2">•</span>
-                            <span>{parseLineContent(listItemMatch[1])}</span>
-                        </div>
-                    );
-                }
-                // Use a div with a min-height for empty lines to simulate <br> or pre-wrap behavior
-                return <div key={index} className={line.trim() === '' ? 'min-h-[1em]' : ''}>{parseLineContent(line)}</div>;
-            })}
-        </div>
-    );
-};
-
-const Sources: React.FC<{ sources: any[] }> = ({ sources }) => {
-    if (!sources || sources.length === 0) return null;
-    return (
-        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
-            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Sources</h4>
-            <ul className="space-y-1">
-                {sources.map((source, index) => (
-                    <li key={index}>
-                        <a 
-                            href={source.web.uri} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                        >
-                            <span>{source.web.title || source.web.uri}</span>
-                            <span className="material-symbols-outlined text-sm">open_in_new</span>
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
-
-const TypingIndicator: React.FC = () => (
-    <div className="flex items-start gap-3 message-enter">
-        <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
-            <span className="material-symbols-outlined text-lg">spark</span>
-        </div>
-        <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3">
-            <div className="flex items-center justify-center space-x-1">
-                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce"></div>
-            </div>
-        </div>
-    </div>
+const SymptomIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
 
-
-const SymptomChecker: React.FC<SymptomCheckerProps> = ({ state, setState }) => {
-    const [input, setInput] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+const TriageBadge: React.FC<{ level: SymptomCheckResult['triageLevel'] }> = ({ level }) => {
+    const styles = {
+        'Self-Care': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+        'See a Dentist Soon': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
+        'Urgent Dental Care Recommended': 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
     };
+    const icon = {
+        'Self-Care': 'healing',
+        'See a Dentist Soon': 'event_available',
+        'Urgent Dental Care Recommended': 'emergency',
+    };
+    return (
+        <div className={`px-3 py-2 text-sm font-semibold rounded-full inline-flex items-center gap-2 ${styles[level]}`}>
+            <span className="material-symbols-outlined text-base">{icon[level]}</span>
+            {level}
+        </div>
+    );
+};
 
-    useEffect(scrollToBottom, [state.history, state.isLoading]);
+const SymptomChecker: React.FC = () => {
+    const [symptoms, setSymptoms] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<SymptomCheckResult | null>(null);
 
-    useEffect(() => {
-        // If history is empty, initialize with a welcome message.
-        if (state.history.length === 0) {
-            const initialMessage: ChatMessage = { role: 'model', text: "Hello! I'm your OralBio AI assistant. How are you feeling today? Please describe any symptoms you're experiencing." };
-            setState({ history: [initialMessage], isLoading: false, suggestedReplies: ["I have a toothache", "My gums are bleeding", "I have bad breath"] });
-        }
-    }, [state.history.length, setState]);
+    const handleAnalyze = useCallback(async () => {
+        if (!symptoms.trim()) return;
 
-    const handleSendMessage = async (messageText: string) => {
-        if (!messageText.trim() || state.isLoading) return;
-
-        const userMessage: ChatMessage = { role: 'user', text: messageText };
-        const newHistory = [...state.history, userMessage];
-        
-        setState(prev => ({ ...prev, history: newHistory, isLoading: true, suggestedReplies: [] }));
-        setInput('');
+        setIsLoading(true);
+        setError(null);
+        setResult(null);
 
         try {
-            const response = await sendMessageToChecker(newHistory);
-            
-            const modelMessage: ChatMessage = { role: 'model', text: response.text, sources: response.sources };
-            
-            setState(prev => ({ 
-                ...prev, 
-                history: [...newHistory, modelMessage], 
-                suggestedReplies: response.suggestedReplies 
-            }));
-
-        } catch (error) {
-            console.error("Symptom checker failed:", error);
-            const errorMessage: ChatMessage = { role: 'model', text: 'Sorry, I encountered an error. Please try again.' };
-            setState(prev => ({ ...prev, history: [...prev.history, errorMessage] }));
+            const response = await analyzeSymptoms(symptoms);
+            setResult(response);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(`Failed to analyze symptoms. ${errorMessage}`);
         } finally {
-            setState(prev => ({ ...prev, isLoading: false }));
+            setIsLoading(false);
         }
-    };
+    }, [symptoms]);
 
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSendMessage(input);
-    };
-    
+    const textToSpeak = useMemo(() => {
+        if (!result) return "";
+        return `
+            Triage level: ${result.triageLevel}.
+            Possible conditions include: ${result.possibleConditions.map(c => c.name).join(', ')}.
+            Recommendations: ${result.careRecommendations.join(' ')}.
+            Disclaimer: ${result.disclaimer}.
+        `;
+    }, [result]);
+
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {state.history.map((msg, index) => (
-                    msg.role === 'model' ? (
-                        <div key={index} className="flex items-start gap-3 message-enter">
-                            <div className="flex-shrink-0 size-8 bg-cyan-500 text-white flex items-center justify-center rounded-full">
-                                <span className="material-symbols-outlined text-lg">spark</span>
-                            </div>
-                            <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl rounded-tl-none p-3 max-w-[85%] md:max-w-2xl">
-                                <FormattedMessage text={msg.text} />
-                                <Sources sources={msg.sources || []} />
-                            </div>
-                        </div>
-                    ) : (
-                        <div key={index} className="flex items-start gap-3 justify-end message-enter">
-                            <div className="bg-blue-600 text-white rounded-2xl rounded-tr-none p-3 max-w-[85%] md:max-w-2xl">
-                                <p className="text-sm" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
-                            </div>
-                            <div className="flex-shrink-0 size-8 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 flex items-center justify-center rounded-full">
-                                <span className="material-symbols-outlined text-lg">person</span>
-                            </div>
-                        </div>
-                    )
-                ))}
-                
-                {state.isLoading && state.history.length > 0 && state.history[state.history.length - 1].role === 'user' && <TypingIndicator />}
-
-                <div ref={messagesEndRef} />
-            </div>
-
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-                {state.suggestedReplies.length > 0 && !state.isLoading && (
-                     <div className="flex gap-2 flex-wrap justify-center mb-4">
-                       {state.suggestedReplies.map((reply, index) => (
-                         <button 
-                            key={index}
-                            onClick={() => handleSendMessage(reply)}
-                            disabled={state.isLoading}
-                            className="rounded-full border border-blue-500/50 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                {reply}
-                         </button>
-                       ))}
-                    </div>
-                )}
-
-
-                <form onSubmit={handleFormSubmit} className="relative">
-                    <input
-                        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-full text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-cyan-500 border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 h-14 placeholder:text-slate-500 dark:placeholder:text-slate-400 p-4 pr-12 text-base font-normal leading-normal"
-                        placeholder={"Type your message..."}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        disabled={state.isLoading}
+        <div className="space-y-6">
+            <Card title="AI Symptom Checker" icon={<SymptomIcon />}>
+                <div className="space-y-4">
+                    <p className="text-sm text-subtle-light dark:text-subtle-dark">
+                        Describe your oral health symptoms below. Our AI will provide a preliminary analysis and care recommendations.
+                        <strong className="block mt-1">This is not a substitute for professional medical advice.</strong>
+                    </p>
+                    <textarea
+                        value={symptoms}
+                        onChange={(e) => setSymptoms(e.target.value)}
+                        placeholder="e.g., 'My back molar is sensitive to cold drinks, and my gums bleed when I floss that area.'"
+                        disabled={isLoading}
+                        rows={4}
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-3 text-sm text-foreground-light dark:text-foreground-dark focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 placeholder-subtle-light dark:placeholder-subtle-dark"
+                        aria-label="Enter your oral health symptoms"
                     />
-                    <button type="submit" disabled={state.isLoading || !input.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 flex size-10 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span className="material-symbols-outlined text-2xl">arrow_upward</span>
+                    <button
+                        onClick={handleAnalyze}
+                        disabled={isLoading || !symptoms.trim()}
+                        className="w-full bg-primary hover:opacity-90 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? <Spinner size="xs" variant="white" /> : <span className="material-symbols-outlined">psychology</span>}
+                        <span>Analyze Symptoms</span>
                     </button>
-                </form>
-            </div>
+                </div>
+            </Card>
+
+            {isLoading && (
+                <div className="py-8 flex justify-center">
+                    <Spinner label="Analyzing your symptoms..." />
+                </div>
+            )}
+            {error && (
+                <p className="text-red-700 dark:text-red-300 text-center bg-red-100 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>
+            )}
+            {result && (
+                <Card 
+                  title="Analysis Result"
+                  headerAction={<TTSButton textToSpeak={textToSpeak} className="text-primary hover:bg-primary/10" />}
+                >
+                    <div className="space-y-6">
+                        <div className="text-center">
+                            <TriageBadge level={result.triageLevel} />
+                        </div>
+                        
+                        <section>
+                            <h3 className="text-lg font-semibold mb-2 text-primary">Possible Conditions</h3>
+                             <ul className="space-y-2">
+                                {result.possibleConditions.map((cond, i) => (
+                                    <li key={i} className="bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/10 dark:border-white/10 flex justify-between items-center">
+                                        <span className="font-semibold text-foreground-light dark:text-foreground-dark">{cond.name}</span>
+                                        <span className="text-sm text-subtle-light dark:text-subtle-dark">Likelihood: {cond.likelihood}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                        
+                        <section>
+                            <h3 className="text-lg font-semibold mb-2 text-primary">Care Recommendations</h3>
+                             <ul className="space-y-2 list-disc list-inside text-foreground-light dark:text-foreground-dark">
+                                {result.careRecommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                            </ul>
+                        </section>
+                        
+                        <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-300 font-semibold">Disclaimer</p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400">{result.disclaimer}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
         </div>
     );
 };
