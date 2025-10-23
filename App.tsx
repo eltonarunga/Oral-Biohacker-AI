@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -46,7 +47,7 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Added constructor to properly initialize state and handle props. This resolves errors related to `this.state` and `this.props` being undefined, which also fixes downstream type errors about missing 'children' props.
+  // FIX: Added constructor to initialize state and call super(props). This resolves errors where `this.state` and `this.props` were accessed before being defined, which also fixes downstream prop type errors.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -247,7 +248,7 @@ export const App: React.FC = () => {
             <div className="flex h-screen bg-background-light dark:bg-background-dark text-foreground-light dark:text-foreground-dark">
                 <Sidebar currentPage={page} onNavigate={handleNavigate} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} onLogout={handleLogout} />
                 <div className="flex flex-1 flex-col overflow-hidden relative">
-                    <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} />
+                    <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} user={user} />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
                         <Suspense fallback={<Spinner fullScreen label="Loading..." />}>{renderPage}</Suspense>
                     </main>

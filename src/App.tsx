@@ -50,7 +50,7 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Corrected an issue where `this.props` was not available in the `ErrorBoundary` component. Using a constructor to call `super(props)` and initialize state ensures the component's `props` are set up correctly.
+  // FIX: Added constructor to initialize state and call super(props). This resolves errors where `this.state` and `this.props` were accessed before being defined, which also fixes downstream prop type errors.
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -254,7 +254,8 @@ export const App: React.FC = () => {
             <div className="flex h-screen bg-background-light dark:bg-background-dark">
                 <Sidebar currentPage={page} onNavigate={handleNavigate} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} onLogout={handleLogout} />
                 <div className="flex flex-1 flex-col overflow-hidden relative">
-                    <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} />
+                    {/* FIX: The Header component requires a `user` prop to display the user's name and avatar. This adds the missing prop. */}
+                    <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} user={user} />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
                         <Suspense fallback={<Spinner fullScreen label="Loading..." />}>{renderPage}</Suspense>
                     </main>

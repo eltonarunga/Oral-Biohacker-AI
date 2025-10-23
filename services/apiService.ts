@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { UserProfile, PersonalizedPlan, SymptomCheckResult, DentistSearchResult, SmileDesignResult, DailyLog, GroundingChunk, Dentist } from '../types';
 

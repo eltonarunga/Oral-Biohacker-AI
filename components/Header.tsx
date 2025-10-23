@@ -1,10 +1,11 @@
 import React from 'react';
-import { Page } from '../types';
+import { Page, UserProfile } from '../types';
 
 interface HeaderProps {
     page: Page;
     onNavigate: (page: Page) => void;
     onToggleSidebar: () => void;
+    user: UserProfile;
 }
 
 const pageTitles: Record<Page, string> = {
@@ -25,7 +26,7 @@ const pageTitles: Record<Page, string> = {
     'voice-notes': 'Voice Notes'
 };
 
-const Header: React.FC<HeaderProps> = ({ page, onNavigate, onToggleSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ page, onNavigate, onToggleSidebar, user }) => {
   const title = pageTitles[page] || 'Dashboard';
 
   return (
@@ -41,8 +42,15 @@ const Header: React.FC<HeaderProps> = ({ page, onNavigate, onToggleSidebar }) =>
                 </button>
             </div>
             <h1 className="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em] text-foreground-light dark:text-foreground-dark">{title}</h1>
-            <div className="flex w-12 items-center justify-end">
-                {/* Right side of header is kept for potential future icons like notifications */}
+            <div className="flex min-w-12 items-center justify-end">
+                <button 
+                    onClick={() => onNavigate('profile')} 
+                    className="flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                    aria-label="View profile"
+                >
+                    <span className="hidden sm:block text-sm font-semibold text-foreground-light dark:text-foreground-dark">{user.name.split(' ')[0]}</span>
+                    <img src={user.avatarUrl} alt={`${user.name}'s avatar`} className="size-8 rounded-full object-cover" />
+                </button>
             </div>
       </div>
     </header>
