@@ -1,5 +1,12 @@
 
 
+
+
+
+
+
+
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -23,10 +30,6 @@ import Chatbot from './components/Chatbot';
 // Lazy load new components
 const HabitManagement = lazy(() => import('./components/HabitManagement'));
 const AIAssistant = lazy(() => import('./components/AIAssistant'));
-const ImageGenerator = lazy(() => import('./components/ImageGenerator'));
-const ImageEditor = lazy(() => import('./components/ImageEditor'));
-const ImageAnalyzer = lazy(() => import('./components/ImageAnalyzer'));
-const VoiceNotes = lazy(() => import('./components/VoiceNotes'));
 
 
 // Import types and data
@@ -47,11 +50,8 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Added constructor to initialize state and call super(props). This resolves errors where `this.state` and `this.props` were accessed before being defined, which also fixes downstream prop type errors.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  // FIX: Initialized state as a class property to resolve errors with accessing `this.state` and `this.props`.
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -106,10 +106,6 @@ export const NAV_ITEMS: { page: Page; label: string; icon: string; isAITool?: bo
     { page: 'habit-management', label: 'Manage Habits', icon: 'checklist' },
     // AI Tools
     { page: 'ai-assistant', label: 'AI Assistant', icon: 'mic', isAITool: true },
-    { page: 'voice-notes', label: 'Voice Notes', icon: 'note_stack', isAITool: true },
-    { page: 'image-analyzer', label: 'Image Analyzer', icon: 'image_search', isAITool: true },
-    { page: 'image-editor', label: 'Image Editor', icon: 'auto_fix', isAITool: true },
-    { page: 'image-generator', label: 'Image Generator', icon: 'palette', isAITool: true },
     { page: 'smile-design-studio', label: 'Smile Studio', icon: 'auto_fix_high', isAITool: true },
 ];
 
@@ -230,10 +226,6 @@ export const App: React.FC = () => {
             case 'habit-management': return <HabitManagement habits={habits} onAddHabit={handleAddHabit} onUpdateHabit={handleUpdateHabit} onDeleteHabit={handleDeleteHabit} />;
             case 'profile': return <UserProfilePage profile={user} habits={habits} habitHistory={habitHistory} dailyDietLog={dailyDietLog} onUpdateProfile={handleUpdateProfile} onUpdateGoals={handleUpdateGoals} theme={theme} onToggleTheme={handleToggleTheme} onDeleteAccount={() => { if (window.confirm('Are you sure?')) handleLogout(); }} />;
             case 'ai-assistant': return <AIAssistant />;
-            case 'image-generator': return <ImageGenerator />;
-            case 'image-editor': return <ImageEditor />;
-            case 'image-analyzer': return <ImageAnalyzer />;
-            case 'voice-notes': return <VoiceNotes />;
             default: return <div className="text-center py-12 text-subtle-light dark:text-subtle-dark">Page not found</div>;
         }
     }, [ user, page, habits, habitHistory, dailyDietLog, personalizedPlan, isPlanLoading, planError, isDietLoading, dietError, theme, handleNavigate, handleToggleHabit, handleGeneratePlan, handleUpdateDietLog, handleAnalyzeDietLog, handleUpdateProfile, handleUpdateGoals, handleToggleTheme, handleLogout, handleAddHabit, handleUpdateHabit, handleDeleteHabit ]);

@@ -20,10 +20,6 @@ const pageTitles: Record<Page, string> = {
     'diet-log': 'Daily Diet Log',
     'habit-management': 'Manage Habits',
     'ai-assistant': 'AI Assistant',
-    'image-generator': 'Image Generator',
-    'image-editor': 'Image Editor',
-    'image-analyzer': 'Image Analyzer',
-    'voice-notes': 'Voice Notes'
 };
 
 const Header: React.FC<HeaderProps> = ({ page, onNavigate, onToggleSidebar, user }) => {

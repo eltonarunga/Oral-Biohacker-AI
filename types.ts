@@ -1,4 +1,5 @@
 
+
 // ==================== CORE TYPES ====================
 
 export type Page =
@@ -12,11 +13,7 @@ export type Page =
   | 'habit-history'
   | 'diet-log'
   | 'habit-management'
-  | 'ai-assistant'
-  | 'image-generator'
-  | 'image-editor'
-  | 'image-analyzer'
-  | 'voice-notes';
+  | 'ai-assistant';
 
 export interface UserProfile {
   id: string;

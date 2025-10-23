@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -25,10 +30,6 @@ import Chatbot from './components/Chatbot';
 // Lazy load new components
 const HabitManagement = lazy(() => import('./components/HabitManagement'));
 const AIAssistant = lazy(() => import('./components/AIAssistant'));
-const ImageGenerator = lazy(() => import('./components/ImageGenerator'));
-const ImageEditor = lazy(() => import('./components/ImageEditor'));
-const ImageAnalyzer = lazy(() => import('./components/ImageAnalyzer'));
-const VoiceNotes = lazy(() => import('./components/VoiceNotes'));
 
 
 // Import types and data
@@ -38,7 +39,6 @@ import { generatePersonalizedPlan, analyzeDietLog } from './services/apiService'
 import { getDateString } from './utils/habits';
 
 // Error Boundary Component
-// FIX: Define interfaces for props and state for better type safety and to resolve potential type inference issues.
 interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
@@ -50,11 +50,8 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Added constructor to initialize state and call super(props). This resolves errors where `this.state` and `this.props` were accessed before being defined, which also fixes downstream prop type errors.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  // FIX: Initialized state as a class property. This resolves errors where `this.state` and `this.props` were accessed before being defined, which also fixes downstream prop type errors.
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -111,10 +108,6 @@ export const NAV_ITEMS: { page: Page; label: string; icon: string; isAITool?: bo
     { page: 'habit-management', label: 'Manage Habits', icon: 'checklist' },
     // AI Tools
     { page: 'ai-assistant', label: 'AI Assistant', icon: 'mic', isAITool: true },
-    { page: 'voice-notes', label: 'Voice Notes', icon: 'note_stack', isAITool: true },
-    { page: 'image-analyzer', label: 'Image Analyzer', icon: 'image_search', isAITool: true },
-    { page: 'image-editor', label: 'Image Editor', icon: 'auto_fix', isAITool: true },
-    { page: 'image-generator', label: 'Image Generator', icon: 'palette', isAITool: true },
     { page: 'smile-design-studio', label: 'Smile Studio', icon: 'auto_fix_high', isAITool: true },
 ];
 
@@ -231,15 +224,10 @@ export const App: React.FC = () => {
             case 'education': return <EducationalContent />;
             case 'find-dentist': return <FindDentist />;
             case 'smile-design-studio': return <SmileDesignStudio />;
-            // FIX: The `HabitHistory` component requires an `onNavigate` prop for its "Manage Habits" button to function correctly. This adds the missing prop.
             case 'habit-history': return <HabitHistory habits={habits} habitHistory={habitHistory} onNavigate={handleNavigate} />;
             case 'habit-management': return <HabitManagement habits={habits} onAddHabit={handleAddHabit} onUpdateHabit={handleUpdateHabit} onDeleteHabit={handleDeleteHabit} />;
             case 'profile': return <UserProfilePage profile={user} habits={habits} habitHistory={habitHistory} dailyDietLog={dailyDietLog} onUpdateProfile={handleUpdateProfile} onUpdateGoals={handleUpdateGoals} theme={theme} onToggleTheme={handleToggleTheme} onDeleteAccount={() => { if (window.confirm('Are you sure?')) handleLogout(); }} />;
             case 'ai-assistant': return <AIAssistant />;
-            case 'image-generator': return <ImageGenerator />;
-            case 'image-editor': return <ImageEditor />;
-            case 'image-analyzer': return <ImageAnalyzer />;
-            case 'voice-notes': return <VoiceNotes />;
             default: return <div className="text-center py-12 text-subtle-light dark:text-subtle-dark">Page not found</div>;
         }
     }, [ user, page, habits, habitHistory, dailyDietLog, personalizedPlan, isPlanLoading, planError, isDietLoading, dietError, theme, handleNavigate, handleToggleHabit, handleGeneratePlan, handleUpdateDietLog, handleAnalyzeDietLog, handleUpdateProfile, handleUpdateGoals, handleToggleTheme, handleLogout, handleAddHabit, handleUpdateHabit, handleDeleteHabit ]);
@@ -254,7 +242,6 @@ export const App: React.FC = () => {
             <div className="flex h-screen bg-background-light dark:bg-background-dark">
                 <Sidebar currentPage={page} onNavigate={handleNavigate} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} onLogout={handleLogout} />
                 <div className="flex flex-1 flex-col overflow-hidden relative">
-                    {/* FIX: The Header component requires a `user` prop to display the user's name and avatar. This adds the missing prop. */}
                     <Header page={page} onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(s => !s)} user={user} />
                     <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
                         <Suspense fallback={<Spinner fullScreen label="Loading..." />}>{renderPage}</Suspense>
