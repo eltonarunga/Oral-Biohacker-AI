@@ -1,16 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -54,7 +43,7 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Replaced constructor with state class property to resolve component typing issues.
+  // FIX: Refactored to use a state property initializer to resolve TS errors.
   state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
@@ -93,12 +82,16 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Mock data for habits
+// Updated habits with a clear distinction between core and supplemental
 const initialHabits: Habit[] = [
-    { id: 'h1', name: 'Oil Pulling', description: 'Swish with coconut oil for 15 minutes.', time: 'Morning, before breakfast', category: 'Biohacking', icon: 'water_drop' },
-    { id: 'h2', name: 'Tongue Scraping', description: 'Clean your tongue surface.', time: 'Morning, after brushing', category: 'Clinically Proven', icon: 'clear_all' },
-    { id: 'h3', name: 'Floss Teeth', description: 'Clean between all teeth.', time: 'Evening, before bed', category: 'Clinically Proven', icon: 'cleaning_services' },
-    { id: 'h4', name: 'Take Magnesium', description: 'Aids in muscle relaxation and sleep.', time: 'Evening, 1 hour before bed', category: 'Biohacking', icon: 'pill' },
+    // Core Habits
+    { id: 'h-brush-am', name: 'Brushing (Morning)', description: 'Brush for 2 minutes.', time: 'Morning', category: 'Clinically Proven', icon: 'wb_sunny' },
+    { id: 'h-brush-pm', name: 'Brushing (Evening)', description: 'Brush for 2 minutes before bed.', time: 'Evening', category: 'Clinically Proven', icon: 'dark_mode' },
+    { id: 'h-floss', name: 'Flossing', description: 'Clean between all teeth.', time: 'Once a day', category: 'Clinically Proven', icon: 'cleaning_services' },
+    // Supplemental Habits
+    { id: 'h-tongue-scrape', name: 'Tongue Scraping', description: 'Clean your tongue surface.', time: 'Morning, after brushing', category: 'Clinically Proven', icon: 'clear_all' },
+    { id: 'h-oil-pull', name: 'Oil Pulling', description: 'Swish with coconut oil for 15 minutes.', time: 'Morning, before breakfast', category: 'Biohacking', icon: 'water_drop' },
+    { id: 'h-magnesium', name: 'Take Magnesium', description: 'Aids in muscle relaxation and sleep.', time: 'Evening, 1 hour before bed', category: 'Biohacking', icon: 'pill' },
 ];
 
 export const NAV_ITEMS: { page: Page; label: string; icon: string; isAITool?: boolean }[] = [

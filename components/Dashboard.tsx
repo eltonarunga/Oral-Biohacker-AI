@@ -1,10 +1,14 @@
+
+
 import React, { useMemo } from 'react';
 import { UserProfile, Habit, Page } from '../types';
-import { getDateString } from '../utils/habits';
 import HabitTracker from './HabitTracker';
 import PersonalizedInsights from './PersonalizedInsights';
 import Goals from './Goals';
 import { Card } from './common/Card';
+import CoreHabitsCard from './CoreHabitsCard';
+// FIX: Imported the missing 'getDateString' utility function.
+import { getDateString } from '../utils/habits';
 
 // ==================== TYPES ====================
 
@@ -18,13 +22,13 @@ interface DashboardProps {
 
 // ==================== SUB-COMPONENTS ====================
 
-const HabitItem: React.FC<{
+const SupplementalHabitItem: React.FC<{
     habit: Habit;
     onToggle: (id: string) => void;
     isCompleted: boolean;
     habitHistory: Record<string, string[]>;
 }> = ({ habit, onToggle, isCompleted, habitHistory }) => (
-    <div className="flex items-center justify-between p-3 transition-colors rounded-lg hover:bg-black/5">
+    <div className="flex items-center justify-between p-3 transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
         <div className="flex items-center gap-4">
             <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <span className="material-symbols-outlined">{habit.icon}</span>
@@ -77,8 +81,13 @@ const Dashboard: React.FC<DashboardProps> = ({
     habitHistory, 
     onToggleHabit,
 }) => {
-    const today = getDateString(new Date());
-    const todaysCompletions = useMemo(() => habitHistory[today] || [], [habitHistory, today]);
+    const { coreHabits, supplementalHabits } = useMemo(() => {
+        const coreHabitIds = ['h-brush-am', 'h-brush-pm', 'h-floss'];
+        return {
+            coreHabits: habits.filter(h => coreHabitIds.includes(h.id)),
+            supplementalHabits: habits.filter(h => !coreHabitIds.includes(h.id)),
+        };
+    }, [habits]);
 
     return (
         <div className="space-y-8">
@@ -93,27 +102,33 @@ const Dashboard: React.FC<DashboardProps> = ({
 
             {/* AI Insight Section */}
             <PersonalizedInsights profile={profile} habitHistory={habitHistory} />
+            
+            {/* Core Habits Section */}
+            <CoreHabitsCard
+                habits={coreHabits}
+                habitHistory={habitHistory}
+                onToggleHabit={onToggleHabit}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Habit Tracking */}
-                    <Card title="Today's Habits">
-                        <div className="space-y-2 -m-2">
-                            {habits.map((habit) => {
-                                const isCompleted = todaysCompletions.includes(habit.id);
-                                return (
-                                    <HabitItem 
+                    {/* Supplemental Habit Tracking */}
+                    {supplementalHabits.length > 0 && (
+                        <Card title="Supplemental Habits">
+                            <div className="space-y-2 -m-2">
+                                {supplementalHabits.map((habit) => (
+                                    <SupplementalHabitItem 
                                         key={habit.id} 
                                         habit={habit} 
                                         onToggle={onToggleHabit} 
-                                        isCompleted={isCompleted}
+                                        isCompleted={(habitHistory[getDateString(new Date())] || []).includes(habit.id)}
                                         habitHistory={habitHistory}
                                     />
-                                );
-                            })}
-                        </div>
-                    </Card>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
                     
                     {/* Explore Section */}
                     <section>

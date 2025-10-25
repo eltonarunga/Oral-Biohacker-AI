@@ -20,19 +20,19 @@ const getLast7DaysStatus = (habitId: string, history: Record<string, string[]>):
     return status;
 };
 
-const WeeklyDots: React.FC<{ status: boolean[] }> = ({ status }) => {
+// NEW: Replaced WeeklyDots with a more visual WeeklyBarChart to show progress.
+const WeeklyBarChart: React.FC<{ status: boolean[] }> = ({ status }) => {
     const completions = status.filter(Boolean).length;
     return (
         <div className="flex items-center gap-2" title={`${completions}/7 completions in the last 7 days`}>
-            <div className="flex gap-1">
+            <div className="flex items-end gap-1 h-5"> {/* Aligns bars to the bottom */}
                 {status.map((completed, index) => (
                     <div
                         key={index}
-                        className={`w-2 h-4 rounded-sm ${completed ? 'bg-primary' : 'bg-subtle-light/20 dark:bg-subtle-dark/20'}`}
+                        className={`w-1.5 rounded-full transition-all duration-300 ${completed ? 'h-full bg-primary' : 'h-1/3 bg-subtle-light/20 dark:bg-subtle-dark/20'}`}
                     />
                 ))}
             </div>
-            <span className="text-xs font-bold text-foreground-light dark:text-foreground-dark">{completions}/7</span>
         </div>
     );
 };
@@ -47,16 +47,17 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habitId, habitHistory }) =>
     }
 
     return (
-        <div className="flex items-center gap-4">
-            {last7DaysCompletions > 0 && <WeeklyDots status={last7Days} />}
+        <div className="flex items-center gap-3">
+            {last7DaysCompletions > 0 && <WeeklyBarChart status={last7Days} />}
             
             {streak > 0 && (
                 <div
                     className={`flex items-center gap-1 text-orange-500 dark:text-orange-400 font-bold ${streak > 2 ? 'animate-pulse-bright' : ''}`}
                     title={`Current streak: ${streak} days`}
                 >
-                    <span className="material-symbols-outlined text-xl leading-none">local_fire_department</span>
-                    <span className="text-base leading-none font-black tracking-tight">{streak}</span>
+                    {/* ENHANCED: Made the icon and number larger for more visual impact. */}
+                    <span className="material-symbols-outlined text-xl leading-none" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                    <span className="text-lg leading-none font-black tracking-tighter">{streak}</span>
                 </div>
             )}
         </div>
