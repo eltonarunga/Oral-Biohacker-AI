@@ -7,6 +7,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 
 // Import components
@@ -50,10 +54,10 @@ class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  // FIX: Initialized state as a class property to resolve errors with accessing `this.state` and `this.props`.
+  // FIX: Using class property for state initialization to resolve type errors.
   state: ErrorBoundaryState = { hasError: false, error: null };
 
-  static getDerivedStateFromError(error: Error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
